@@ -707,6 +707,7 @@ function openInfoPanel(latlng, features, options = {}) {
     </div>
   `;
 
+  content.scrollTop = 0;
   document.getElementById("info-sidebar").classList.add("active");
   hasEverSelected = true;
   hideInfoHint();
