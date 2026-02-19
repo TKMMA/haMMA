@@ -601,7 +601,7 @@ function openInfoPanel(latlng, features, options = {}) {
         <div class="mmcard__body">
           <h3 class="mmcard__title">Fishing Rules Summary</h3>
 
-          <span class="mmcard__subtitle-label">Multiple Managed Areas at this Location:</span>
+          <span class="mmcard__subtitle-label">Managed Areas at this Location:</span>
           <div class="mmcard__subtitle">${areaNamesHtml}</div>
 
           <div class="mm-statewide-notice">
