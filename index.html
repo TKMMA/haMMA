@@ -10,48 +10,46 @@
 </head>
 <body>
   <div class="map-interface">
-    <aside id="map-sidebar" class="map-sidebar">
-      <div class="sidebar-header">
-        <div class="header-top brand-header">
-          <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
-          <div class="brand-title-block">
-            <h2 class="brand-title-main">Managed Areas</h2>
-            <div class="brand-title-sub">Marine and Freshwater</div>
-          </div>
-          <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
+    <div class="brand-panel">
+      <div class="brand-header">
+        <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
+        <div class="brand-title-block">
+          <h2 class="brand-title-main">Managed Areas</h2>
+          <div class="brand-title-sub">Marine and Freshwater</div>
         </div>
+        <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
+      </div>
 
-        <div class="search-row">
-          <div class="search-box">
-          <div class="search-input-wrapper">
-            <input
-              type="text"
-              id="area-search"
-              placeholder="Search areas..."
-              onkeyup="filterSidebar()"
-              autocomplete="off"
-              spellcheck="false"
-            />
-            <span class="search-icon" aria-hidden="true">🔍</span>
-          </div>
-          <div class="collapsed-search-label" aria-hidden="true">Expand Navigation</div>
+      <div class="brand-search-row">
+        <div class="search-input-wrapper">
+          <input
+            type="text"
+            id="area-search"
+            placeholder="Search areas..."
+            onkeyup="filterSidebar()"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <span class="search-icon" aria-hidden="true">🔍</span>
         </div>
       </div>
+    </div>
+
+    <aside id="map-sidebar" class="map-sidebar">
+      <button
+        id="sidebar-toggle"
+        class="sidebar-edge-toggle"
+        onclick="toggleSidebar()"
+        aria-controls="map-sidebar"
+        aria-label="Collapse Navigation"
+        title="Collapse Navigation"
+        type="button"
+      >◀</button>
 
       <div id="island-list" class="island-list">
         <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
       </div>
     </aside>
-
-    <button
-      id="sidebar-toggle"
-      class="sidebar-edge-toggle"
-      onclick="toggleSidebar()"
-      aria-controls="map-sidebar"
-      aria-label="Close Menu"
-      title="Close Menu"
-      type="button"
-    >◀</button>
 
     <aside id="info-sidebar" class="info-sidebar">
       <button onclick="closeInfoPanel()" class="close-info-btn" title="Close Details" aria-label="Close Details" type="button">✕</button>
