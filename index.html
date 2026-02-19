@@ -20,7 +20,10 @@
         <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
       </div>
 
-      <div class="brand-search-row">
+    </div>
+
+    <aside id="map-sidebar" class="map-sidebar">
+      <div class="sidebar-search-wrap">
         <div class="search-input-wrapper">
           <input
             type="text"
@@ -33,9 +36,13 @@
           <span class="search-icon" aria-hidden="true">🔍</span>
         </div>
       </div>
-    </div>
 
-    <aside id="map-sidebar" class="map-sidebar">
+      <div id="island-list" class="island-list">
+        <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
+      </div>
+    </aside>
+
+    <div class="sidebar-toggle-rail">
       <button
         id="sidebar-toggle"
         class="sidebar-edge-toggle"
@@ -45,11 +52,7 @@
         title="Collapse Navigation"
         type="button"
       >◀</button>
-
-      <div id="island-list" class="island-list">
-        <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
-      </div>
-    </aside>
+    </div>
 
     <aside id="info-sidebar" class="info-sidebar">
       <button onclick="closeInfoPanel()" class="close-info-btn" title="Close Details" aria-label="Close Details" type="button">✕</button>
