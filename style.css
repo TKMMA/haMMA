@@ -1,9 +1,8 @@
-
 :root {
   --primary-blue: #005a87;
   --sidebar-width: 320px;
   --collapsed-width: 50px;
-  --info-panel-width: 400px;
+  --info-panel-width: var(--sidebar-width);
   --bg-light: #f6f6f6;
   --border-color: #e6e6e6;
   --transition-speed: 0.3s;
