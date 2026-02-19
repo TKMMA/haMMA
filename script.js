@@ -169,6 +169,11 @@ function getVisibleMapRect(padding = 30) {
   };
 }
 
+function getTargetFitZoom(bounds) {
+  const leftOverlayWidth = getLeftOverlayWidth();
+  return map.getBoundsZoom(bounds, false, L.point(leftOverlayWidth + 30, 30));
+}
+
 function featureFitsVisibleArea(bounds, padding = 30) {
   const rect = getVisibleMapRect(padding);
   const nw = map.latLngToContainerPoint(bounds.getNorthWest());
@@ -281,23 +286,28 @@ window.zoomToArea = (islandName, areaName) => {
 
       const alreadyFits = featureFitsVisibleArea(bounds);
       const alreadyCentered = featureIsCenteredInVisibleArea(bounds);
+      const targetFitZoom = getTargetFitZoom(bounds);
+      const currentZoom = map.getZoom();
+      const needsFlyToBounds = !alreadyFits || currentZoom < (targetFitZoom - 0.05);
 
       map.stop();
 
-      if (!alreadyFits) {
+      if (needsFlyToBounds) {
         const leftOverlayWidth = getLeftOverlayWidth();
+        map.once("moveend", () => flashLayerBorder(layer));
         map.flyToBounds(bounds, {
           animate: true,
-          duration: 1.0,
+          duration: 2.0,
           easeLinearity: 0.2,
           paddingTopLeft: [leftOverlayWidth + 30, 30],
           paddingBottomRight: [30, 30]
         });
       } else if (!alreadyCentered) {
+        map.once("moveend", () => flashLayerBorder(layer));
         flySelectionIntoVisibleArea(bounds.getCenter(), 1.0);
+      } else {
+        flashLayerBorder(layer);
       }
-
-      flashLayerBorder(layer);
     }
   });
 };
