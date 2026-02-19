@@ -2,6 +2,7 @@ const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
 let activeSelectionMarker = null;
+let activeAccordionLayer = null;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -119,24 +120,58 @@ function flySelectionIntoVisibleArea(latlng, duration = 1.0) {
   map.flyTo(targetLatLng, map.getZoom(), { animate: true, duration, easeLinearity: 0.2 });
 }
 
+function getLayerBaseStyle(layer) {
+  if (!layer.__baseStyle) {
+    layer.__baseStyle = {
+      color: layer.options.color ?? "#005a87",
+      weight: layer.options.weight ?? 1.2,
+      fillOpacity: layer.options.fillOpacity ?? 0.3,
+      opacity: layer.options.opacity ?? 1
+    };
+  }
+
+  return layer.__baseStyle;
+}
+
+function clearAccordionSelectionHighlight() {
+  if (!activeAccordionLayer || typeof activeAccordionLayer.setStyle !== "function") return;
+
+  const base = getLayerBaseStyle(activeAccordionLayer);
+  activeAccordionLayer.setStyle({
+    color: base.color,
+    weight: base.weight,
+    fillOpacity: base.fillOpacity,
+    opacity: base.opacity
+  });
+
+  activeAccordionLayer = null;
+}
+
 function flashLayerBorder(layer) {
   if (!layer || typeof layer.setStyle !== "function") return;
 
-  const originalStyle = {
-    color: layer.options.color,
-    weight: layer.options.weight,
-    fillOpacity: layer.options.fillOpacity
-  };
+  const base = getLayerBaseStyle(layer);
+  if (activeAccordionLayer && activeAccordionLayer !== layer) {
+    clearAccordionSelectionHighlight();
+  }
 
-  layer.setStyle({ color: "#ffd60a", weight: 5, fillOpacity: originalStyle.fillOpacity ?? 0.3 });
+  activeAccordionLayer = layer;
+
+  layer.setStyle({
+    color: "#ffe066",
+    weight: 5,
+    opacity: 1,
+    fillOpacity: base.fillOpacity
+  });
 
   setTimeout(() => {
     layer.setStyle({
-      color: originalStyle.color ?? "#005a87",
-      weight: originalStyle.weight ?? 1.2,
-      fillOpacity: originalStyle.fillOpacity ?? 0.3
+      color: "#ffd60a",
+      weight: Math.max(base.weight + 0.8, 2.2),
+      opacity: 0.5,
+      fillOpacity: base.fillOpacity
     });
-  }, 800);
+  }, 1200);
 }
 
 function updateClickMarker(latlng) {
@@ -153,6 +188,7 @@ function clearMapSelection() {
     activeSelectionMarker = null;
   }
 
+  clearAccordionSelectionHighlight();
   window.closeInfoPanel();
 }
 
@@ -489,7 +525,7 @@ function openInfoPanel(latlng, features, options = {}) {
         <div class="mmpopup__header-title">${headerTitle}</div>
       </div>
 
-      <div class="mmpopup__scroll" style="padding: 15px;">
+      <div class="mmpopup__scroll">
         ${summaryCardHtml}
         ${sectionDividerHtml}
         ${individualCardsHtml}
@@ -500,6 +536,7 @@ function openInfoPanel(latlng, features, options = {}) {
   document.getElementById("info-sidebar").classList.add("active");
 
   if (options.source === "map" && latlng) {
+    clearAccordionSelectionHighlight();
     updateClickMarker(latlng);
   }
 
