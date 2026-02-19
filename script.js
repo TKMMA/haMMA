@@ -103,7 +103,7 @@ function getLeftOverlayWidth() {
   return Math.max(0, leftOverlayRight - mapRect.left);
 }
 
-function panSelectionIntoVisibleArea(latlng) {
+function panSelectionIntoVisibleArea(latlng, duration = 0.35) {
   if (!latlng) return;
 
   const mapSize = map.getSize();
@@ -112,8 +112,9 @@ function panSelectionIntoVisibleArea(latlng) {
 
   const point = map.latLngToContainerPoint(latlng);
   const deltaX = Math.round(visibleCenterX - point.x);
+  if (Math.abs(deltaX) < 2) return;
 
-  map.panBy([deltaX, 0], { animate: true, duration: 0.35 });
+  map.panBy([deltaX, 0], { animate: true, duration });
 }
 
 function flashLayerBorder(layer) {
@@ -133,7 +134,7 @@ function flashLayerBorder(layer) {
       weight: originalStyle.weight ?? 1.2,
       fillOpacity: originalStyle.fillOpacity ?? 0.3
     });
-  }, 550);
+  }, 800);
 }
 
 function updateClickMarker(latlng) {
@@ -144,14 +145,23 @@ function updateClickMarker(latlng) {
   activeSelectionMarker = L.marker(latlng).addTo(map);
 }
 
+function clearMapSelection() {
+  if (activeSelectionMarker) {
+    map.removeLayer(activeSelectionMarker);
+    activeSelectionMarker = null;
+  }
+
+  window.closeInfoPanel();
+}
+
 function getTargetFitZoom(bounds) {
   const leftOverlayWidth = getLeftOverlayWidth();
   return map.getBoundsZoom(bounds, false, L.point(leftOverlayWidth + 30, 30));
 }
 
-function panSelectionToFeatureCenter(bounds) {
+function panSelectionToFeatureCenter(bounds, duration = 0.35) {
   const center = bounds.getCenter();
-  panSelectionIntoVisibleArea(center);
+  panSelectionIntoVisibleArea(center, duration);
 }
 
 function populateSidebar(islandName, features) {
@@ -246,15 +256,19 @@ window.zoomToArea = (islandName, areaName) => {
       const targetFitZoom = getTargetFitZoom(bounds);
       const currentZoom = map.getZoom();
 
+      map.stop();
+
       if (currentZoom < targetFitZoom) {
         const leftOverlayWidth = getLeftOverlayWidth();
         map.fitBounds(bounds, {
           animate: true,
+          duration: 0.5,
+          easeLinearity: 0.25,
           paddingTopLeft: [leftOverlayWidth + 30, 30],
           paddingBottomRight: [30, 30]
         });
       } else {
-        panSelectionToFeatureCenter(bounds);
+        panSelectionToFeatureCenter(bounds, 0.7);
       }
 
       flashLayerBorder(layer);
@@ -455,7 +469,9 @@ function openInfoPanel(latlng, features, options = {}) {
 
 }
 
-window.closeInfoPanel = () => document.getElementById("info-sidebar").classList.remove("active");
+window.closeInfoPanel = () => {
+  document.getElementById("info-sidebar").classList.remove("active");
+};
 
 function splitFeaturesByIsland(features) {
   const grouped = {};
@@ -522,6 +538,8 @@ async function loadAllFromSingleService() {
 
             if (hits.length) {
               openInfoPanel(e.latlng, hits, { source: "map" });
+            } else {
+              clearMapSelection();
             }
           });
         }
@@ -534,5 +552,9 @@ async function loadAllFromSingleService() {
     console.error(e);
   }
 }
+
+map.on("click", () => {
+  clearMapSelection();
+});
 
 loadAllFromSingleService();
