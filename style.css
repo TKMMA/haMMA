@@ -241,7 +241,7 @@ body, html {
 .info-content {
   flex: 1;
   overflow-y: auto;
-  padding-top: 10px;
+  padding-top: 0;
 }
 
 .close-info-btn {
@@ -264,38 +264,44 @@ body, html {
 .mmpopup {
   background: #ffffff;
   width: 100%;
+  min-height: 100%;
 }
 
 .mmpopup__header {
-  padding: 12px;
-  background: var(--bg-light);
-  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 18px 12px 14px;
+  background: #dce5eb;
+  border-bottom: 1px solid #c3d0da;
   text-align: center;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .mmpopup__header-title {
   font-size: 11px;
-  font-weight: 800;
-  color: #888;
+  font-weight: 900;
+  color: #5f6d76;
   text-transform: uppercase;
 }
 
 .mmpopup__scroll {
-  padding: 15px;
+  padding: 10px;
 }
 
 .mmcard {
-  border: 1px solid var(--border-color);
+  border: 1px solid #d0dbe3;
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: #fdfefe;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09);
   margin-bottom: 15px;
 }
 
 .mmcard--summary {
-  border: 2px solid var(--primary-blue);
-  background: #f0f7fb;
+  border: 2px solid #3f6f89;
+  background: #d8e7f1;
 }
 
 .mmcard__body {
@@ -367,23 +373,23 @@ body, html {
 .section-divider {
   margin: 12px 0 15px;
   padding: 8px 10px;
-  background: var(--bg-light);
-  border: 1px dashed var(--border-color);
+  background: #e2eaef;
+  border: 1px dashed #b7c5ce;
   border-radius: 8px;
   font-size: 11px;
   font-weight: 900;
-  color: #777;
+  color: #5f6b73;
   text-transform: uppercase;
   text-align: center;
 }
 
 .mm-statewide-notice {
-  background: #e1e9ee;
+  background: #cad9e3;
   padding: 10px;
   border-radius: 8px;
-  border: 1px solid var(--primary-blue);
+  border: 1px solid #3f6f89;
   font-size: 12px;
-  color: #33444d;
+  color: #22343d;
   text-align: center;
   margin-bottom: 12px;
 }
