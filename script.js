@@ -1,7 +1,6 @@
 const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
-const SELECTION_MAX_ZOOM = 9;
 let activeSelectionMarker = null;
 
 window.showTab = function (btn, tabId) {
@@ -117,12 +116,6 @@ function panSelectionIntoVisibleArea(latlng) {
   map.panBy([deltaX, 0], { animate: true, duration: 0.35 });
 }
 
-function ensureSelectionZoom() {
-  if (map.getZoom() > SELECTION_MAX_ZOOM) {
-    map.setZoom(SELECTION_MAX_ZOOM, { animate: true });
-  }
-}
-
 function flashLayerBorder(layer) {
   if (!layer || typeof layer.setStyle !== "function") return;
 
@@ -149,6 +142,16 @@ function updateClickMarker(latlng) {
   }
 
   activeSelectionMarker = L.marker(latlng).addTo(map);
+}
+
+function getTargetFitZoom(bounds) {
+  const leftOverlayWidth = getLeftOverlayWidth();
+  return map.getBoundsZoom(bounds, false, L.point(leftOverlayWidth + 30, 30));
+}
+
+function panSelectionToFeatureCenter(bounds) {
+  const center = bounds.getCenter();
+  panSelectionIntoVisibleArea(center);
 }
 
 function populateSidebar(islandName, features) {
@@ -236,16 +239,25 @@ window.zoomToArea = (islandName, areaName) => {
   layerGroup.eachLayer((layer) => {
     const name = getVal(layer.feature.properties, "Full_Name") || getVal(layer.feature.properties, "Full_name");
     if (name === areaName) {
-      const leftOverlayWidth = getLeftOverlayWidth();
-      map.fitBounds(layer.getBounds(), {
-        animate: true,
-        maxZoom: SELECTION_MAX_ZOOM,
-        paddingTopLeft: [leftOverlayWidth + 30, 30],
-        paddingBottomRight: [30, 30]
-      });
+      const bounds = layer.getBounds();
+
+      openInfoPanel(bounds.getCenter(), [layer.feature], { source: "menu" });
+
+      const targetFitZoom = getTargetFitZoom(bounds);
+      const currentZoom = map.getZoom();
+
+      if (currentZoom < targetFitZoom) {
+        const leftOverlayWidth = getLeftOverlayWidth();
+        map.fitBounds(bounds, {
+          animate: true,
+          paddingTopLeft: [leftOverlayWidth + 30, 30],
+          paddingBottomRight: [30, 30]
+        });
+      } else {
+        panSelectionToFeatureCenter(bounds);
+      }
 
       flashLayerBorder(layer);
-      openInfoPanel(layer.getBounds().getCenter(), [layer.feature], { source: "menu" });
     }
   });
 };
@@ -441,8 +453,6 @@ function openInfoPanel(latlng, features, options = {}) {
     updateClickMarker(latlng);
   }
 
-  ensureSelectionZoom();
-  panSelectionIntoVisibleArea(latlng);
 }
 
 window.closeInfoPanel = () => document.getElementById("info-sidebar").classList.remove("active");
