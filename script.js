@@ -1,7 +1,8 @@
-
 const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
+const SELECTION_MAX_ZOOM = 9;
+let activeSelectionMarker = null;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -89,6 +90,67 @@ L.tileLayer(
   { attribution: "Labels", pane: "shadowPane" }
 ).addTo(map);
 
+function getLeftOverlayWidth() {
+  const mapRect = map.getContainer().getBoundingClientRect();
+  const sidebarRect = document.getElementById("map-sidebar")?.getBoundingClientRect();
+  const infoRect = document.getElementById("info-sidebar")?.classList.contains("active")
+    ? document.getElementById("info-sidebar")?.getBoundingClientRect()
+    : null;
+
+  const rightEdges = [sidebarRect?.right, infoRect?.right].filter(Boolean);
+  if (!rightEdges.length) return 0;
+
+  const leftOverlayRight = Math.max(...rightEdges);
+  return Math.max(0, leftOverlayRight - mapRect.left);
+}
+
+function panSelectionIntoVisibleArea(latlng) {
+  if (!latlng) return;
+
+  const mapSize = map.getSize();
+  const leftOverlayWidth = getLeftOverlayWidth();
+  const visibleCenterX = leftOverlayWidth + ((mapSize.x - leftOverlayWidth) / 2);
+
+  const point = map.latLngToContainerPoint(latlng);
+  const deltaX = Math.round(visibleCenterX - point.x);
+
+  map.panBy([deltaX, 0], { animate: true, duration: 0.35 });
+}
+
+function ensureSelectionZoom() {
+  if (map.getZoom() > SELECTION_MAX_ZOOM) {
+    map.setZoom(SELECTION_MAX_ZOOM, { animate: true });
+  }
+}
+
+function flashLayerBorder(layer) {
+  if (!layer || typeof layer.setStyle !== "function") return;
+
+  const originalStyle = {
+    color: layer.options.color,
+    weight: layer.options.weight,
+    fillOpacity: layer.options.fillOpacity
+  };
+
+  layer.setStyle({ color: "#ffd60a", weight: 5, fillOpacity: originalStyle.fillOpacity ?? 0.3 });
+
+  setTimeout(() => {
+    layer.setStyle({
+      color: originalStyle.color ?? "#005a87",
+      weight: originalStyle.weight ?? 1.2,
+      fillOpacity: originalStyle.fillOpacity ?? 0.3
+    });
+  }, 550);
+}
+
+function updateClickMarker(latlng) {
+  if (activeSelectionMarker) {
+    map.removeLayer(activeSelectionMarker);
+  }
+
+  activeSelectionMarker = L.marker(latlng).addTo(map);
+}
+
 function populateSidebar(islandName, features) {
   const container = document.getElementById("island-list");
   if (!container) return;
@@ -174,8 +236,16 @@ window.zoomToArea = (islandName, areaName) => {
   layerGroup.eachLayer((layer) => {
     const name = getVal(layer.feature.properties, "Full_Name") || getVal(layer.feature.properties, "Full_name");
     if (name === areaName) {
-      map.fitBounds(layer.getBounds());
-      openInfoPanel(layer.getBounds().getCenter(), [layer.feature]);
+      const leftOverlayWidth = getLeftOverlayWidth();
+      map.fitBounds(layer.getBounds(), {
+        animate: true,
+        maxZoom: SELECTION_MAX_ZOOM,
+        paddingTopLeft: [leftOverlayWidth + 30, 30],
+        paddingBottomRight: [30, 30]
+      });
+
+      flashLayerBorder(layer);
+      openInfoPanel(layer.getBounds().getCenter(), [layer.feature], { source: "menu" });
     }
   });
 };
@@ -213,7 +283,7 @@ window.filterSidebar = () => {
   });
 };
 
-function openInfoPanel(latlng, features) {
+function openInfoPanel(latlng, features, options = {}) {
   let summaryCardHtml = "";
   let sectionDividerHtml = "";
 
@@ -366,7 +436,13 @@ function openInfoPanel(latlng, features) {
   `;
 
   document.getElementById("info-sidebar").classList.add("active");
-  map.panTo(latlng);
+
+  if (options.source === "map" && latlng) {
+    updateClickMarker(latlng);
+  }
+
+  ensureSelectionZoom();
+  panSelectionIntoVisibleArea(latlng);
 }
 
 window.closeInfoPanel = () => document.getElementById("info-sidebar").classList.remove("active");
@@ -434,7 +510,9 @@ async function loadAllFromSingleService() {
               }
             });
 
-            if (hits.length) openInfoPanel(e.latlng, hits);
+            if (hits.length) {
+              openInfoPanel(e.latlng, hits, { source: "map" });
+            }
           });
         }
       }).addTo(map);
@@ -445,7 +523,6 @@ async function loadAllFromSingleService() {
   } catch (e) {
     console.error(e);
   }
-  
 }
 
 loadAllFromSingleService();
