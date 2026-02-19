@@ -7,6 +7,8 @@
   --border-color: #e6e6e6;
   --transition-speed: 0.3s;
   --panel-margin: 15px;
+  --panel-gap: calc(var(--panel-margin) + 12px);
+  --panel-stack-offset: 112px;
 
   --color-primary-dark: #003366;
   --color-primary-main: #005FA9;
@@ -62,15 +64,15 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 22px;
+  gap: 34px;
   margin-bottom: 10px;
 }
 
 .brand-logo {
-  width: 42px;
-  height: 42px;
+  width: 54px;
+  height: 54px;
   object-fit: contain;
-  flex: 0 0 42px;
+  flex: 0 0 54px;
 }
 
 .brand-title-block {
@@ -133,10 +135,10 @@ body, html {
 
 .map-sidebar {
   position: absolute;
-  top: calc(var(--panel-margin) + 128px);
+  top: calc(var(--panel-margin) + var(--panel-stack-offset));
   left: var(--panel-margin);
   width: var(--sidebar-width);
-  max-height: calc(100vh - (var(--panel-margin) * 3) - 128px);
+  max-height: calc(100vh - (var(--panel-margin) * 3) - var(--panel-stack-offset));
   background: #ffffff;
   display: flex;
   flex-direction: column;
@@ -161,10 +163,10 @@ body, html {
 
 .sidebar-toggle-rail {
   position: absolute;
-  top: calc(var(--panel-margin) + 128px);
-  left: calc(var(--panel-margin) + var(--sidebar-width));
+  top: calc(var(--panel-margin) + var(--panel-stack-offset));
+  left: calc(var(--panel-margin) + var(--sidebar-width) + (var(--panel-gap) / 2) - 9px);
   width: 18px;
-  height: calc(100vh - (var(--panel-margin) * 3) - 128px);
+  height: calc(100vh - (var(--panel-margin) * 3) - var(--panel-stack-offset));
   z-index: 1004;
   display: flex;
   align-items: center;
@@ -173,7 +175,7 @@ body, html {
 }
 
 .map-sidebar.collapsed ~ .sidebar-toggle-rail {
-  left: calc(var(--panel-margin) + var(--collapsed-width));
+  left: calc(var(--panel-margin) + var(--collapsed-width) + (var(--panel-gap) / 2) - 9px);
 }
 
 .sidebar-edge-toggle {
@@ -206,11 +208,11 @@ body, html {
 
 .info-sidebar {
   position: absolute;
-  top: calc(var(--panel-margin) + 128px);
-  left: calc(var(--sidebar-width) + (var(--panel-margin) * 2) + 12px);
+  top: calc(var(--panel-margin) + var(--panel-stack-offset));
+  left: calc(var(--panel-margin) + var(--sidebar-width) + var(--panel-gap));
   width: var(--info-panel-width);
   height: auto;
-  max-height: calc(100vh - (var(--panel-margin) * 3) - 128px);
+  max-height: calc(100vh - (var(--panel-margin) * 3) - var(--panel-stack-offset));
   min-height: 220px;
   background: white;
   z-index: 999;
@@ -228,8 +230,8 @@ body, html {
 
 .info-empty-hint {
   position: absolute;
-  top: calc(var(--panel-margin) + 144px);
-  left: calc(var(--sidebar-width) + (var(--panel-margin) * 2) + 12px);
+  top: calc(var(--panel-margin) + var(--panel-stack-offset) + 16px);
+  left: calc(var(--panel-margin) + var(--sidebar-width) + var(--panel-gap));
   width: fit-content;
   max-width: calc(var(--info-panel-width) - 24px);
   padding: 10px 14px;
@@ -251,13 +253,13 @@ body, html {
 .info-empty-hint.active { opacity: 1; transform: translateY(0); }
 .map-sidebar.collapsed ~ .info-empty-hint { left: calc(var(--collapsed-width) + (var(--panel-margin) * 2)); }
 
-.info-content { flex: 1; overflow-y: auto; padding-top: 0; scrollbar-gutter: stable; }
+.info-content { flex: 1; overflow-y: auto; padding-top: 0;  }
 .close-info-btn { position: absolute; top: 12px; right: 12px; width: 28px; height: 28px; background: rgba(255,255,255,0.9); border: 1px solid #ddd; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1001; }
 
 .mmpopup { background: #ffffff; width: 100%; min-height: 100%; }
-.mmpopup__header { position: sticky; top: 0; z-index: 5; width: 100%; margin: 0; box-sizing: border-box; padding: 18px 16px 14px; background: #d6e5f2; border-bottom: 1px solid #c3d0da; text-align: center; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.mmpopup__header { position: sticky; top: 0; z-index: 5; width: calc(100% + 10px); margin: 0 -10px 0 0; box-sizing: border-box; padding: 18px 20px 14px 16px; background: #d6e5f2; border-bottom: 1px solid #c3d0da; text-align: center; border-top-left-radius: 12px; border-top-right-radius: 12px; }
 .mmpopup__header-title { font-family: var(--font-primary); font-size: 12px; font-weight: 700; color: #5f6d76; text-transform: uppercase; }
-.mmpopup__scroll { padding: 10px; }
+.mmpopup__scroll { padding: 10px 12px; display: flex; flex-direction: column; }
 
 .mmcard { border: 1px solid #d0dbe3; border-radius: 10px; overflow: hidden; background: #fdfefe; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.09); margin-bottom: 15px; }
 .mmcard--summary { border: 2px solid #3f6f89; background: #d8e7f1; }
@@ -285,10 +287,10 @@ body, html {
 
 @media (max-width: 768px) {
   .brand-panel { width: calc(100% - 30px); left: 15px; }
-  .map-sidebar { width: calc(100% - 30px); left: 15px; top: calc(15px + 128px); max-height: calc(100vh - 45px - 128px); }
-  .info-sidebar { width: calc(100% - 30px); left: 15px; top: calc(15px + 128px); height: auto; max-height: calc(100vh - 45px - 128px); transform: translateY(110%); }
-  .info-empty-hint { max-width: calc(100% - 60px); left: 27px; top: calc(15px + 144px); }
+  .map-sidebar { width: calc(100% - 30px); left: 15px; top: calc(15px + var(--panel-stack-offset)); max-height: calc(100vh - 45px - var(--panel-stack-offset)); }
+  .info-sidebar { width: calc(100% - 30px); left: 15px; top: calc(15px + var(--panel-stack-offset)); height: auto; max-height: calc(100vh - 45px - var(--panel-stack-offset)); transform: translateY(110%); }
+  .info-empty-hint { max-width: calc(100% - 60px); left: 27px; top: calc(15px + var(--panel-stack-offset) + 16px); }
   .info-sidebar.active { transform: translateY(0); }
-  .sidebar-toggle-rail { top: calc(15px + 128px); left: calc(15px + var(--sidebar-width)); height: calc(100vh - 45px - 128px); }
-  .map-sidebar.collapsed ~ .sidebar-toggle-rail { left: calc(15px + var(--collapsed-width)); }
+  .sidebar-toggle-rail { top: calc(15px + var(--panel-stack-offset)); left: calc(15px + var(--sidebar-width) + (var(--panel-gap) / 2) - 9px); height: calc(100vh - 45px - 128px); }
+  .map-sidebar.collapsed ~ .sidebar-toggle-rail { left: calc(15px + var(--collapsed-width) + (var(--panel-gap) / 2) - 9px); }
 }
