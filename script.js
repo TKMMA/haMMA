@@ -5,6 +5,8 @@ let activeSelectionMarker = null;
 let activeAccordionLayer = null;
 let activeHoverLayer = null;
 let infoHintEl = null;
+let infoHintTimer = null;
+let hasEverSelected = false;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -67,8 +69,8 @@ const syncSidebarToggleUI = () => {
   if (!mapSidebarEl || !sidebarToggleEl) return;
   const collapsed = mapSidebarEl.classList.contains("collapsed");
   sidebarToggleEl.textContent = collapsed ? "▶" : "◀";
-  sidebarToggleEl.title = collapsed ? "Open Menu" : "Close Menu";
-  sidebarToggleEl.setAttribute("aria-label", collapsed ? "Open Menu" : "Close Menu");
+  sidebarToggleEl.title = collapsed ? "Show Navigation" : "Collapse";
+  sidebarToggleEl.setAttribute("aria-label", collapsed ? "Show Navigation" : "Collapse");
 };
 
 window.toggleSidebar = () => {
@@ -140,12 +142,25 @@ function ensureInfoHint() {
 function showInfoHint() {
   const el = ensureInfoHint();
   if (!el) return;
+
+  if (infoHintTimer) clearTimeout(infoHintTimer);
+
   el.classList.add("active");
+  infoHintTimer = setTimeout(() => {
+    el.classList.remove("active");
+    infoHintTimer = null;
+  }, 4000);
 }
 
 function hideInfoHint() {
   const el = ensureInfoHint();
   if (!el) return;
+
+  if (infoHintTimer) {
+    clearTimeout(infoHintTimer);
+    infoHintTimer = null;
+  }
+
   el.classList.remove("active");
 }
 
@@ -247,16 +262,21 @@ function updateClickMarker(latlng) {
   activeSelectionMarker = L.marker(latlng).addTo(map);
 }
 
-function clearMapSelection() {
+function clearMapSelection(options = {}) {
   if (activeSelectionMarker) {
     map.removeLayer(activeSelectionMarker);
     activeSelectionMarker = null;
   }
 
+  const hadSelection = Boolean(activeSelectionMarker || activeAccordionLayer || document.getElementById("info-sidebar")?.classList.contains("active"));
+
   clearAccordionSelectionHighlight();
   clearHoverHighlight();
   window.closeInfoPanel();
-  showInfoHint();
+
+  if (options.fromClick && hadSelection && hasEverSelected) {
+    showInfoHint();
+  }
 }
 
 function getVisibleMapRect(padding = 30) {
@@ -688,6 +708,7 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   document.getElementById("info-sidebar").classList.add("active");
+  hasEverSelected = true;
   hideInfoHint();
 
   if (options.source === "map" && latlng) {
@@ -767,7 +788,7 @@ async function loadAllFromSingleService() {
             if (hits.length) {
               openInfoPanel(e.latlng, hits, { source: "map" });
             } else {
-              clearMapSelection();
+              clearMapSelection({ fromClick: true });
             }
           });
         }
@@ -782,9 +803,7 @@ async function loadAllFromSingleService() {
 }
 
 map.on("click", () => {
-  clearMapSelection();
+  clearMapSelection({ fromClick: true });
 });
-
-showInfoHint();
 
 loadAllFromSingleService();
