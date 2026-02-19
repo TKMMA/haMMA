@@ -1,7 +1,7 @@
 :root {
   --primary-blue: #005a87;
   --sidebar-width: 320px;
-  --collapsed-width: 50px;
+  --collapsed-width: 220px;
   --info-panel-width: var(--sidebar-width);
   --bg-light: #f6f6f6;
   --border-color: #e6e6e6;
@@ -56,8 +56,7 @@ body, html {
   width: var(--collapsed-width);
 }
 
-.map-sidebar.collapsed .sidebar-header h2,
-.map-sidebar.collapsed .search-box,
+.map-sidebar.collapsed .sidebar-header,
 .map-sidebar.collapsed .island-list {
   display: none;
 }
@@ -113,19 +112,64 @@ body, html {
   line-height: 1;
 }
 
+
+.collapsed-nav {
+  display: none;
+  height: 100%;
+  width: 100%;
+  padding: 14px 12px;
+  box-sizing: border-box;
+  background: #ffffff;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.map-sidebar.collapsed .collapsed-nav {
+  display: flex;
+}
+
+.collapsed-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4d5c66;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.collapsed-search-icon {
+  font-size: 11px;
+}
+
+.collapsed-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #b6c7d3;
+  border-radius: 10px;
+  background: #edf4f8;
+  color: #24485d;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
 .sidebar-edge-toggle {
   position: absolute;
-  top: calc(var(--panel-margin) + 14px);
-  left: calc(var(--panel-margin) + var(--sidebar-width) - 14px);
-  width: 28px;
-  height: 28px;
+  top: calc(50vh - 16px);
+  left: calc(var(--panel-margin) + var(--sidebar-width) + (var(--panel-margin) / 2) - 8px);
+  width: 16px;
+  height: 32px;
   border: none;
-  border-radius: 9px;
+  border-radius: 8px;
   cursor: pointer;
   background: var(--primary-blue);
   color: #fff;
   font-weight: 900;
-  font-size: 14px;
+  font-size: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -141,7 +185,7 @@ body, html {
 }
 
 .map-sidebar.collapsed ~ .sidebar-edge-toggle {
-  left: calc(var(--panel-margin) + var(--collapsed-width) - 14px);
+  left: calc(var(--panel-margin) + var(--collapsed-width) + (var(--panel-margin) / 2) - 8px);
 }
 
 .island-list {
@@ -210,7 +254,7 @@ body, html {
 .area-item:hover {
   background: #f0f7fb;
   color: var(--primary-blue);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .info-sidebar {
@@ -238,21 +282,23 @@ body, html {
   position: absolute;
   top: var(--panel-margin);
   left: calc(var(--sidebar-width) + (var(--panel-margin) * 2));
-  width: var(--info-panel-width);
-  min-height: 62px;
-  padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.92);
+  width: fit-content;
+  max-width: calc(var(--info-panel-width) - 24px);
+  min-height: auto;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.98);
   border: 1px solid #d4dfe7;
   border-radius: 12px;
   color: #5a6770;
-  font-size: 12px;
-  font-weight: 600;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  text-align: center;
   z-index: 998;
   opacity: 0;
   pointer-events: none;
   transform: translateY(6px);
-  transition: opacity var(--transition-speed) ease, transform var(--transition-speed) ease, left var(--transition-speed);
+  transition: opacity 1.6s ease, transform var(--transition-speed) ease, left var(--transition-speed);
 }
 
 .info-empty-hint.active {
@@ -272,6 +318,7 @@ body, html {
   flex: 1;
   overflow-y: auto;
   padding-top: 0;
+  scrollbar-gutter: stable;
 }
 
 .close-info-btn {
@@ -301,8 +348,8 @@ body, html {
   position: sticky;
   top: 0;
   z-index: 5;
-  width: calc(100% + 8px);
-  margin-right: -8px;
+  width: 100%;
+  margin: 0;
   box-sizing: border-box;
   padding: 18px 16px 14px;
   background: #dce5eb;
@@ -379,7 +426,7 @@ body, html {
 .area-label {
   margin-top: 10px;
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: #333;
 }
@@ -421,7 +468,7 @@ body, html {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #3f6f89;
-  font-size: 12px;
+  font-size: 11px;
   color: #22343d;
   text-align: center;
   margin-bottom: 12px;
@@ -466,7 +513,7 @@ body, html {
   color: #fff;
   text-decoration: none;
   border-radius: 10px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   text-align: center;
 }
@@ -501,7 +548,8 @@ body, html {
   }
 
   .info-empty-hint {
-    width: calc(100% - 30px);
+    width: auto;
+    max-width: calc(100% - 60px);
     left: 15px;
     top: 15px;
   }
