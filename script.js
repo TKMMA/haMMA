@@ -154,9 +154,36 @@ function clearMapSelection() {
   window.closeInfoPanel();
 }
 
-function getTargetFitZoom(bounds) {
+function getVisibleMapRect(padding = 30) {
+  const size = map.getSize();
   const leftOverlayWidth = getLeftOverlayWidth();
-  return map.getBoundsZoom(bounds, false, L.point(leftOverlayWidth + 30, 30));
+
+  return {
+    left: leftOverlayWidth + padding,
+    right: size.x - padding,
+    top: padding,
+    bottom: size.y - padding,
+    centerX: leftOverlayWidth + ((size.x - leftOverlayWidth) / 2)
+  };
+}
+
+function featureFitsVisibleArea(bounds, padding = 30) {
+  const rect = getVisibleMapRect(padding);
+  const nw = map.latLngToContainerPoint(bounds.getNorthWest());
+  const se = map.latLngToContainerPoint(bounds.getSouthEast());
+
+  const left = Math.min(nw.x, se.x);
+  const right = Math.max(nw.x, se.x);
+  const top = Math.min(nw.y, se.y);
+  const bottom = Math.max(nw.y, se.y);
+
+  return left >= rect.left && right <= rect.right && top >= rect.top && bottom <= rect.bottom;
+}
+
+function featureIsCenteredInVisibleArea(bounds, tolerancePx = 6) {
+  const rect = getVisibleMapRect();
+  const center = map.latLngToContainerPoint(bounds.getCenter());
+  return Math.abs(center.x - rect.centerX) <= tolerancePx;
 }
 
 function panSelectionToFeatureCenter(bounds, duration = 0.35) {
@@ -253,12 +280,12 @@ window.zoomToArea = (islandName, areaName) => {
 
       openInfoPanel(bounds.getCenter(), [layer.feature], { source: "menu" });
 
-      const targetFitZoom = getTargetFitZoom(bounds);
-      const currentZoom = map.getZoom();
+      const alreadyFits = featureFitsVisibleArea(bounds);
+      const alreadyCentered = featureIsCenteredInVisibleArea(bounds);
 
       map.stop();
 
-      if (currentZoom < targetFitZoom) {
+      if (!alreadyFits) {
         const leftOverlayWidth = getLeftOverlayWidth();
         map.fitBounds(bounds, {
           animate: true,
@@ -267,7 +294,7 @@ window.zoomToArea = (islandName, areaName) => {
           paddingTopLeft: [leftOverlayWidth + 30, 30],
           paddingBottomRight: [30, 30]
         });
-      } else {
+      } else if (!alreadyCentered) {
         panSelectionToFeatureCenter(bounds, 0.7);
       }
 
