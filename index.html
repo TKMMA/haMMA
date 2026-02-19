@@ -34,6 +34,25 @@
       <div id="island-list" class="island-list">
         <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
       </div>
+
+      <div class="collapsed-nav" aria-hidden="true">
+        <div class="collapsed-search-row">
+          <span class="collapsed-search-icon" aria-hidden="true">🔍</span>
+          <span class="collapsed-search-label">Search enabled</span>
+        </div>
+        <button
+          id="collapsed-expand-btn"
+          class="collapsed-expand-btn"
+          onclick="toggleSidebar()"
+          type="button"
+          aria-controls="map-sidebar"
+          aria-label="Show Navigation"
+          title="Show Navigation"
+        >
+          <span>Show navigation</span>
+          <strong>▶</strong>
+        </button>
+      </div>
     </aside>
 
     <button
