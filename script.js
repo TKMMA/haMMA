@@ -103,7 +103,7 @@ function getLeftOverlayWidth() {
   return Math.max(0, leftOverlayRight - mapRect.left);
 }
 
-function panSelectionIntoVisibleArea(latlng, duration = 0.35) {
+function flySelectionIntoVisibleArea(latlng, duration = 1.0) {
   if (!latlng) return;
 
   const mapSize = map.getSize();
@@ -114,7 +114,9 @@ function panSelectionIntoVisibleArea(latlng, duration = 0.35) {
   const deltaX = Math.round(visibleCenterX - point.x);
   if (Math.abs(deltaX) < 2) return;
 
-  map.panBy([deltaX, 0], { animate: true, duration });
+  const targetPoint = L.point(point.x + deltaX, point.y);
+  const targetLatLng = map.containerPointToLatLng(targetPoint);
+  map.flyTo(targetLatLng, map.getZoom(), { animate: true, duration, easeLinearity: 0.2 });
 }
 
 function flashLayerBorder(layer) {
@@ -183,12 +185,9 @@ function featureFitsVisibleArea(bounds, padding = 30) {
 function featureIsCenteredInVisibleArea(bounds, tolerancePx = 6) {
   const rect = getVisibleMapRect();
   const center = map.latLngToContainerPoint(bounds.getCenter());
-  return Math.abs(center.x - rect.centerX) <= tolerancePx;
-}
+  const visibleCenterY = map.getSize().y / 2;
 
-function panSelectionToFeatureCenter(bounds, duration = 0.35) {
-  const center = bounds.getCenter();
-  panSelectionIntoVisibleArea(center, duration);
+  return Math.abs(center.x - rect.centerX) <= tolerancePx && Math.abs(center.y - visibleCenterY) <= tolerancePx;
 }
 
 function populateSidebar(islandName, features) {
@@ -287,15 +286,15 @@ window.zoomToArea = (islandName, areaName) => {
 
       if (!alreadyFits) {
         const leftOverlayWidth = getLeftOverlayWidth();
-        map.fitBounds(bounds, {
+        map.flyToBounds(bounds, {
           animate: true,
-          duration: 0.5,
-          easeLinearity: 0.25,
+          duration: 1.0,
+          easeLinearity: 0.2,
           paddingTopLeft: [leftOverlayWidth + 30, 30],
           paddingBottomRight: [30, 30]
         });
       } else if (!alreadyCentered) {
-        panSelectionToFeatureCenter(bounds, 0.7);
+        flySelectionIntoVisibleArea(bounds.getCenter(), 1.0);
       }
 
       flashLayerBorder(layer);
