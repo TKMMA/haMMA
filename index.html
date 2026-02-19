@@ -12,8 +12,10 @@
   <div class="map-interface">
     <aside id="map-sidebar" class="map-sidebar">
       <div class="sidebar-header">
-        <div class="header-top">
-          <h2>Regulated Areas</h2>
+        <div class="header-top brand-header">
+          <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
+          <h2>Managed Areas - Marine and Freshwater.</h2>
+          <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
         </div>
 
         <div class="search-box">
@@ -33,25 +35,6 @@
 
       <div id="island-list" class="island-list">
         <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
-      </div>
-
-      <div class="collapsed-nav" aria-hidden="true">
-        <div class="collapsed-search-row">
-          <span class="collapsed-search-icon" aria-hidden="true">🔍</span>
-          <span class="collapsed-search-label">Search enabled</span>
-        </div>
-        <button
-          id="collapsed-expand-btn"
-          class="collapsed-expand-btn"
-          onclick="toggleSidebar()"
-          type="button"
-          aria-controls="map-sidebar"
-          aria-label="Show Navigation"
-          title="Show Navigation"
-        >
-          <span>Show navigation</span>
-          <strong>▶</strong>
-        </button>
       </div>
     </aside>
 
