@@ -1,3 +1,4 @@
+
 const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
@@ -444,6 +445,7 @@ async function loadAllFromSingleService() {
   } catch (e) {
     console.error(e);
   }
+  
 }
 
 loadAllFromSingleService();
