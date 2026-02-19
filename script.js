@@ -3,6 +3,8 @@ const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/r
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
 let activeSelectionMarker = null;
 let activeAccordionLayer = null;
+let activeHoverLayer = null;
+let infoHintEl = null;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -120,6 +122,33 @@ function flySelectionIntoVisibleArea(latlng, duration = 1.0) {
   map.flyTo(targetLatLng, map.getZoom(), { animate: true, duration, easeLinearity: 0.2 });
 }
 
+function ensureInfoHint() {
+  if (infoHintEl) return infoHintEl;
+
+  const host = document.querySelector(".map-interface");
+  if (!host) return null;
+
+  const el = document.createElement("div");
+  el.id = "info-empty-hint";
+  el.className = "info-empty-hint";
+  el.textContent = "Click a shape on the map for area details.";
+  host.appendChild(el);
+  infoHintEl = el;
+  return el;
+}
+
+function showInfoHint() {
+  const el = ensureInfoHint();
+  if (!el) return;
+  el.classList.add("active");
+}
+
+function hideInfoHint() {
+  const el = ensureInfoHint();
+  if (!el) return;
+  el.classList.remove("active");
+}
+
 function getLayerBaseStyle(layer) {
   if (!layer.__baseStyle) {
     layer.__baseStyle = {
@@ -131,6 +160,41 @@ function getLayerBaseStyle(layer) {
   }
 
   return layer.__baseStyle;
+}
+
+function clearHoverHighlight() {
+  if (!activeHoverLayer || activeHoverLayer === activeAccordionLayer) {
+    activeHoverLayer = null;
+    return;
+  }
+
+  const base = getLayerBaseStyle(activeHoverLayer);
+  activeHoverLayer.setStyle({
+    color: base.color,
+    weight: base.weight,
+    opacity: base.opacity,
+    fillOpacity: base.fillOpacity
+  });
+
+  activeHoverLayer = null;
+}
+
+function applyHoverHighlight(layer) {
+  if (!layer || layer === activeAccordionLayer) return;
+
+  if (activeHoverLayer && activeHoverLayer !== layer) {
+    clearHoverHighlight();
+  }
+
+  const base = getLayerBaseStyle(layer);
+  layer.setStyle({
+    color: "#ffd60a",
+    weight: Math.max(base.weight + 0.6, 2),
+    opacity: 0.5,
+    fillOpacity: base.fillOpacity
+  });
+
+  activeHoverLayer = layer;
 }
 
 function clearAccordionSelectionHighlight() {
@@ -155,6 +219,7 @@ function flashLayerBorder(layer) {
     clearAccordionSelectionHighlight();
   }
 
+  clearHoverHighlight();
   activeAccordionLayer = layer;
 
   layer.setStyle({
@@ -168,7 +233,7 @@ function flashLayerBorder(layer) {
     layer.setStyle({
       color: "#ffd60a",
       weight: Math.max(base.weight + 0.8, 2.2),
-      opacity: 0.5,
+      opacity: 1,
       fillOpacity: base.fillOpacity
     });
   }, 1200);
@@ -189,7 +254,9 @@ function clearMapSelection() {
   }
 
   clearAccordionSelectionHighlight();
+  clearHoverHighlight();
   window.closeInfoPanel();
+  showInfoHint();
 }
 
 function getVisibleMapRect(padding = 30) {
@@ -229,6 +296,50 @@ function featureIsCenteredInVisibleArea(bounds, tolerancePx = 6) {
   const visibleCenterY = map.getSize().y / 2;
 
   return Math.abs(center.x - rect.centerX) <= tolerancePx && Math.abs(center.y - visibleCenterY) <= tolerancePx;
+}
+
+function pointInRing(point, ring) {
+  let inside = false;
+
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+
+    const intersect = ((yi > point[1]) !== (yj > point[1]))
+      && (point[0] < (xj - xi) * (point[1] - yi) / ((yj - yi) || 1e-12) + xi);
+
+    if (intersect) inside = !inside;
+  }
+
+  return inside;
+}
+
+function pointInPolygonCoords(point, polygonCoords) {
+  if (!polygonCoords?.length) return false;
+  if (!pointInRing(point, polygonCoords[0])) return false;
+
+  for (let i = 1; i < polygonCoords.length; i += 1) {
+    if (pointInRing(point, polygonCoords[i])) return false;
+  }
+
+  return true;
+}
+
+function pointInFeatureGeometry(latlng, feature) {
+  const geometry = feature?.geometry;
+  if (!geometry) return false;
+
+  const point = [latlng.lng, latlng.lat];
+
+  if (geometry.type === "Polygon") {
+    return pointInPolygonCoords(point, geometry.coordinates);
+  }
+
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.some((poly) => pointInPolygonCoords(point, poly));
+  }
+
+  return false;
 }
 
 function populateSidebar(islandName, features) {
@@ -284,6 +395,8 @@ function populateSidebar(islandName, features) {
     item.dataset.island = islandName;
     item.dataset.area = areaName;
     item.addEventListener("click", () => window.zoomToArea(islandName, areaName));
+    item.addEventListener("mouseenter", () => window.hoverArea(islandName, areaName));
+    item.addEventListener("mouseleave", () => clearHoverHighlight());
     list.appendChild(item);
   });
 
@@ -318,19 +431,31 @@ window.zoomToArea = (islandName, areaName) => {
     if (name === areaName) {
       const bounds = layer.getBounds();
 
-      openInfoPanel(bounds.getCenter(), [layer.feature], { source: "menu" });
-
       const alreadyFits = featureFitsVisibleArea(bounds);
       const alreadyCentered = featureIsCenteredInVisibleArea(bounds);
       const targetFitZoom = getTargetFitZoom(bounds);
       const currentZoom = map.getZoom();
       const needsFlyToBounds = !alreadyFits || currentZoom < (targetFitZoom - 0.05);
+      const needsMove = needsFlyToBounds || !alreadyCentered;
+      const noSelectionVisible = !document.getElementById("info-sidebar").classList.contains("active");
 
       map.stop();
 
+      const openPanel = () => openInfoPanel(bounds.getCenter(), [layer.feature], { source: "menu" });
+
       if (needsFlyToBounds) {
         const leftOverlayWidth = getLeftOverlayWidth();
-        map.once("moveend", () => flashLayerBorder(layer));
+
+        if (noSelectionVisible) {
+          map.once("moveend", () => {
+            openPanel();
+            flashLayerBorder(layer);
+          });
+        } else {
+          openPanel();
+          map.once("moveend", () => flashLayerBorder(layer));
+        }
+
         map.flyToBounds(bounds, {
           animate: true,
           duration: 2.0,
@@ -339,13 +464,39 @@ window.zoomToArea = (islandName, areaName) => {
           paddingBottomRight: [30, 30]
         });
       } else if (!alreadyCentered) {
-        map.once("moveend", () => flashLayerBorder(layer));
+        if (noSelectionVisible) {
+          map.once("moveend", () => {
+            openPanel();
+            flashLayerBorder(layer);
+          });
+        } else {
+          openPanel();
+          map.once("moveend", () => flashLayerBorder(layer));
+        }
+
         flySelectionIntoVisibleArea(bounds.getCenter(), 1.0);
       } else {
+        openPanel();
         flashLayerBorder(layer);
       }
     }
   });
+};
+
+window.hoverArea = (islandName, areaName) => {
+  const layerGroup = allIslandLayers[islandName];
+  if (!layerGroup) return;
+
+  let matchedLayer = null;
+  layerGroup.eachLayer((layer) => {
+    const name = getVal(layer.feature.properties, "Full_Name") || getVal(layer.feature.properties, "Full_name");
+    if (!matchedLayer && name === areaName) matchedLayer = layer;
+  });
+
+  if (!matchedLayer) return;
+  if (!map.getBounds().intersects(matchedLayer.getBounds())) return;
+
+  applyHoverHighlight(matchedLayer);
 };
 
 window.filterSidebar = () => {
@@ -355,10 +506,13 @@ window.filterSidebar = () => {
   document.querySelectorAll(".island-group").forEach((group) => {
     let hasMatch = false;
 
+    const islandLabel = group.querySelector(".header-left span")?.innerText || "";
+    const islandMatch = term !== "" && normalizeHawaiianText(islandLabel).includes(term);
+
     const items = group.querySelectorAll(".area-item");
     items.forEach((item) => {
       const itemNorm = normalizeHawaiianText(item.innerText);
-      const match = term === "" ? true : itemNorm.includes(term);
+      const match = term === "" ? true : islandMatch || itemNorm.includes(term);
 
       item.style.display = match ? "block" : "none";
       if (match) hasMatch = true;
@@ -534,6 +688,7 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   document.getElementById("info-sidebar").classList.add("active");
+  hideInfoHint();
 
   if (options.source === "map" && latlng) {
     clearAccordionSelectionHighlight();
@@ -604,7 +759,7 @@ async function loadAllFromSingleService() {
             Object.values(allIslandLayers).forEach((islandLayerGroup) => {
               if (map.hasLayer(islandLayerGroup)) {
                 islandLayerGroup.eachLayer((l) => {
-                  if (l.getBounds().contains(e.latlng)) hits.push(l.feature);
+                  if (pointInFeatureGeometry(e.latlng, l.feature)) hits.push(l.feature);
                 });
               }
             });
@@ -629,5 +784,7 @@ async function loadAllFromSingleService() {
 map.on("click", () => {
   clearMapSelection();
 });
+
+showInfoHint();
 
 loadAllFromSingleService();
