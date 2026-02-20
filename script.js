@@ -7,6 +7,8 @@ let activeHoverLayer = null;
 let infoHintEl = null;
 let infoHintTimer = null;
 let hasEverSelected = false;
+let activeAreaSelection = null;
+let mobileSheetDragState = null;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -64,6 +66,213 @@ const normalizeHawaiianText = (str) => {
 
 const mapSidebarEl = document.getElementById("map-sidebar");
 const sidebarToggleEl = document.getElementById("sidebar-toggle");
+const infoSidebarEl = document.getElementById("info-sidebar");
+const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
+
+const isMobileView = () => mobileMediaQuery.matches;
+
+function setInfoSidebarState(state = "hidden") {
+  if (!infoSidebarEl) return;
+
+  infoSidebarEl.classList.remove("active");
+
+  if (state === "hidden") {
+    infoSidebarEl.dataset.mobileState = "hidden";
+    return;
+  }
+
+  infoSidebarEl.classList.add("active");
+
+  if (!isMobileView()) {
+    infoSidebarEl.dataset.mobileState = "expanded";
+    return;
+  }
+
+  const targetHeight = state === "expanded"
+    ? Math.round(window.innerHeight * 0.9)
+    : 80;
+
+  infoSidebarEl.style.setProperty("--info-sheet-height", `${targetHeight}px`);
+  infoSidebarEl.dataset.mobileState = state;
+}
+
+function setMapSidebarMobileState(state = "half") {
+  if (!mapSidebarEl || !isMobileView()) return;
+
+  const viewportHeight = window.innerHeight;
+  const sheetHeights = {
+    peek: 80,
+    half: Math.round(viewportHeight * 0.5),
+    full: Math.round(viewportHeight * 0.95)
+  };
+
+  const targetHeight = sheetHeights[state] || sheetHeights.half;
+  mapSidebarEl.style.setProperty("--map-sheet-height", `${targetHeight}px`);
+  mapSidebarEl.dataset.mobileState = state;
+  mapSidebarEl.classList.toggle("collapsed", state === "peek");
+  syncSidebarToggleUI();
+}
+
+function snapMapSidebarByHeight(heightPx) {
+  const viewportHeight = window.innerHeight;
+  const states = [
+    { key: "peek", value: 80 },
+    { key: "half", value: Math.round(viewportHeight * 0.5) },
+    { key: "full", value: Math.round(viewportHeight * 0.95) }
+  ];
+
+  const nearest = states.reduce((best, state) => (
+    Math.abs(state.value - heightPx) < Math.abs(best.value - heightPx) ? state : best
+  ), states[0]);
+
+  setMapSidebarMobileState(nearest.key);
+}
+
+function snapInfoSidebarByHeight(heightPx) {
+  const expanded = Math.round(window.innerHeight * 0.9);
+  const nearest = Math.abs(heightPx - 80) <= Math.abs(heightPx - expanded) ? "minimized" : "expanded";
+  setInfoSidebarState(nearest);
+}
+
+function setActiveAreaItem(islandName, areaName) {
+  activeAreaSelection = islandName && areaName ? { islandName, areaName } : null;
+
+  document.querySelectorAll(".area-item.active-area").forEach((item) => item.classList.remove("active-area"));
+
+  if (!activeAreaSelection) return;
+
+  document.querySelectorAll(".area-item").forEach((item) => {
+    if (item.dataset.island === islandName && item.dataset.area === areaName) {
+      item.classList.add("active-area");
+    }
+  });
+}
+
+function ensureSidebarBanner(sidebarEl, options = {}) {
+  if (!sidebarEl) return null;
+
+  let banner = sidebarEl.querySelector(".sheet-banner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.className = "sheet-banner";
+
+    const handle = document.createElement("button");
+    handle.type = "button";
+    handle.className = "sheet-handle";
+    handle.setAttribute("aria-label", options.handleLabel || "Resize panel");
+
+    const title = document.createElement("span");
+    title.className = "sheet-banner-title";
+
+    const action = document.createElement("button");
+    action.type = "button";
+    action.className = "sheet-banner-action";
+
+    banner.append(handle, title, action);
+    sidebarEl.prepend(banner);
+  }
+
+  const titleEl = banner.querySelector(".sheet-banner-title");
+  const actionEl = banner.querySelector(".sheet-banner-action");
+
+  if (options.title) {
+    titleEl.textContent = options.title;
+  }
+
+  if (options.actionText) {
+    actionEl.textContent = options.actionText;
+    actionEl.style.display = "inline-flex";
+    actionEl.onclick = options.onAction || null;
+  } else {
+    actionEl.style.display = "none";
+    actionEl.onclick = null;
+  }
+
+  return banner.querySelector(".sheet-handle");
+}
+
+function updateInfoBannerTitle(titleText) {
+  ensureSidebarBanner(infoSidebarEl, {
+    handleLabel: "Resize details panel",
+    title: titleText || "Area details",
+    actionText: "List",
+    onAction: () => {
+      if (!isMobileView()) return;
+      setInfoSidebarState("hidden");
+      setMapSidebarMobileState("half");
+    }
+  });
+}
+
+function attachDraggableHandle(sidebarEl, mode) {
+  const handle = ensureSidebarBanner(sidebarEl, {
+    handleLabel: mode === "info" ? "Resize details panel" : "Resize navigation panel",
+    title: mode === "map" ? "Managed Areas" : "Area details",
+    actionText: mode === "info" ? "List" : null,
+    onAction: mode === "info"
+      ? () => {
+        if (!isMobileView()) return;
+        setInfoSidebarState("hidden");
+        setMapSidebarMobileState("half");
+      }
+      : null
+  });
+
+  if (!handle || handle.dataset.dragBound === "1") return;
+  handle.dataset.dragBound = "1";
+
+  handle.addEventListener("pointerdown", (event) => {
+    if (!isMobileView()) return;
+
+    const sidebarVar = mode === "info" ? "--info-sheet-height" : "--map-sheet-height";
+    const startHeight = parseFloat(getComputedStyle(sidebarEl).getPropertyValue(sidebarVar)) || sidebarEl.getBoundingClientRect().height;
+
+    mobileSheetDragState = {
+      mode,
+      startY: event.clientY,
+      startHeight
+    };
+
+    handle.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+
+  handle.addEventListener("pointermove", (event) => {
+    if (!mobileSheetDragState || mobileSheetDragState.mode != mode) return;
+
+    const delta = mobileSheetDragState.startY - event.clientY;
+    const viewportHeight = window.innerHeight;
+
+    if (mode === "info") {
+      const next = Math.max(80, Math.min(Math.round(viewportHeight * 0.9), mobileSheetDragState.startHeight + delta));
+      sidebarEl.style.setProperty("--info-sheet-height", `${next}px`);
+      sidebarEl.dataset.mobileState = next > 220 ? "expanded" : "minimized";
+    } else {
+      const next = Math.max(80, Math.min(Math.round(viewportHeight * 0.95), mobileSheetDragState.startHeight + delta));
+      sidebarEl.style.setProperty("--map-sheet-height", `${next}px`);
+      sidebarEl.dataset.mobileState = next > 300 ? "full" : next > 130 ? "half" : "peek";
+      sidebarEl.classList.toggle("collapsed", sidebarEl.dataset.mobileState === "peek");
+    }
+  });
+
+  const endDrag = () => {
+    if (!mobileSheetDragState || mobileSheetDragState.mode != mode) return;
+
+    const sheetVar = mode === "info" ? "--info-sheet-height" : "--map-sheet-height";
+    const finalHeight = parseFloat(getComputedStyle(sidebarEl).getPropertyValue(sheetVar)) || 80;
+
+    if (mode === "info") {
+      snapInfoSidebarByHeight(finalHeight);
+    } else {
+      snapMapSidebarByHeight(finalHeight);
+    }
+
+    mobileSheetDragState = null;
+  };
+
+  handle.addEventListener("pointerup", endDrag);
+  handle.addEventListener("pointercancel", endDrag);
+}
 
 const syncSidebarToggleUI = () => {
   if (!mapSidebarEl || !sidebarToggleEl) return;
@@ -75,14 +284,58 @@ const syncSidebarToggleUI = () => {
 
 window.toggleSidebar = () => {
   if (!mapSidebarEl) return;
+
+  if (isMobileView()) {
+    const currentState = mapSidebarEl.dataset.mobileState || "half";
+    setMapSidebarMobileState(currentState === "peek" ? "half" : "peek");
+    return;
+  }
+
   mapSidebarEl.classList.toggle("collapsed");
   syncSidebarToggleUI();
 };
 
 syncSidebarToggleUI();
+attachDraggableHandle(mapSidebarEl, "map");
+attachDraggableHandle(infoSidebarEl, "info");
 
 const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
-L.control.zoom({ position: "topright" }).addTo(map);
+const zoomControl = L.control.zoom({ position: isMobileView() ? "bottomright" : "topright" }).addTo(map);
+
+function syncLeafletControlPosition() {
+  const targetPosition = isMobileView() ? "bottomright" : "topright";
+  if (zoomControl.options.position === targetPosition) return;
+  map.removeControl(zoomControl);
+  zoomControl.setPosition(targetPosition);
+  zoomControl.addTo(map);
+}
+
+function syncResponsiveSidebarState() {
+  if (!mapSidebarEl) return;
+
+  if (isMobileView()) {
+    setMapSidebarMobileState(mapSidebarEl.dataset.mobileState || "full");
+
+    if (infoSidebarEl.classList.contains("active")) {
+      setInfoSidebarState(infoSidebarEl.dataset.mobileState === "expanded" ? "expanded" : "minimized");
+    } else {
+      setInfoSidebarState("hidden");
+    }
+  } else {
+    mapSidebarEl.style.removeProperty("--map-sheet-height");
+    infoSidebarEl.style.removeProperty("--info-sheet-height");
+    mapSidebarEl.dataset.mobileState = "desktop";
+    infoSidebarEl.dataset.mobileState = infoSidebarEl.classList.contains("active") ? "expanded" : "hidden";
+    mapSidebarEl.classList.remove("collapsed");
+  }
+
+  syncSidebarToggleUI();
+  syncLeafletControlPosition();
+}
+
+mobileMediaQuery.addEventListener("change", syncResponsiveSidebarState);
+window.addEventListener("resize", syncResponsiveSidebarState);
+syncResponsiveSidebarState();
 
 L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -95,6 +348,8 @@ L.tileLayer(
 ).addTo(map);
 
 function getLeftOverlayWidth() {
+  if (isMobileView()) return 0;
+
   const mapRect = map.getContainer().getBoundingClientRect();
   const sidebarRect = document.getElementById("map-sidebar")?.getBoundingClientRect();
   const infoRect = document.getElementById("info-sidebar")?.classList.contains("active")
@@ -268,11 +523,12 @@ function clearMapSelection(options = {}) {
     activeSelectionMarker = null;
   }
 
-  const hadSelection = Boolean(activeSelectionMarker || activeAccordionLayer || document.getElementById("info-sidebar")?.classList.contains("active"));
+  const hadSelection = Boolean(activeSelectionMarker || activeAccordionLayer || infoSidebarEl?.classList.contains("active"));
 
   clearAccordionSelectionHighlight();
   clearHoverHighlight();
   window.closeInfoPanel();
+  setActiveAreaItem(null, null);
 
   if (options.fromClick && hadSelection && hasEverSelected) {
     showInfoHint();
@@ -280,6 +536,30 @@ function clearMapSelection(options = {}) {
 }
 
 function getVisibleMapRect(padding = 30) {
+  if (isMobileView()) {
+    const size = map.getSize();
+    const brandBottom = document.querySelector(".brand-panel")?.getBoundingClientRect().bottom || 0;
+    const mapTop = map.getContainer().getBoundingClientRect().top;
+    const topInset = Math.max(padding, Math.ceil(brandBottom - mapTop) + 10);
+
+    const overlayHeights = [mapSidebarEl, infoSidebarEl]
+      .filter((el) => el && (el === mapSidebarEl || el.classList.contains("active")))
+      .map((el) => {
+        const rect = el.getBoundingClientRect();
+        return Math.max(0, map.getContainer().getBoundingClientRect().bottom - rect.top);
+      });
+
+    const bottomInset = Math.max(...overlayHeights, Math.round(size.y * 0.35));
+
+    return {
+      left: padding,
+      right: size.x - padding,
+      top: topInset,
+      bottom: Math.max(topInset + 20, size.y - bottomInset),
+      centerX: size.x / 2
+    };
+  }
+
   const size = map.getSize();
   const leftOverlayWidth = getLeftOverlayWidth();
 
@@ -293,6 +573,13 @@ function getVisibleMapRect(padding = 30) {
 }
 
 function getTargetFitZoom(bounds) {
+  if (isMobileView()) {
+    const mobileRect = getVisibleMapRect();
+    const padX = Math.max(30, map.getSize().x - (mobileRect.right - mobileRect.left));
+    const padY = Math.max(30, map.getSize().y - (mobileRect.bottom - mobileRect.top));
+    return map.getBoundsZoom(bounds, false, L.point(padX, padY));
+  }
+
   const leftOverlayWidth = getLeftOverlayWidth();
   return map.getBoundsZoom(bounds, false, L.point(leftOverlayWidth + 30, 30));
 }
@@ -429,8 +716,28 @@ window.toggleIsland = (id) => {
   const list = document.getElementById(`list-${id}`);
   const header = document.getElementById(`header-${id}`);
   if (!list || !header) return;
-  list.classList.toggle("active");
-  header.classList.toggle("expanded");
+
+  const shouldOpen = !list.classList.contains("active");
+
+  if (isMobileView()) {
+    document.querySelectorAll(".area-list.active").forEach((openList) => {
+      if (openList.id !== `list-${id}`) openList.classList.remove("active");
+    });
+
+    document.querySelectorAll(".island-header.expanded").forEach((openHeader) => {
+      if (openHeader.id !== `header-${id}`) openHeader.classList.remove("expanded");
+    });
+  }
+
+  list.classList.toggle("active", shouldOpen);
+  header.classList.toggle("expanded", shouldOpen);
+
+  if (isMobileView() && shouldOpen) {
+    const scroller = document.getElementById("island-list");
+    if (scroller) {
+      scroller.scrollTo({ top: header.offsetTop - 2, behavior: "smooth" });
+    }
+  }
 };
 
 window.toggleLayerVisibility = (event, islandName) => {
@@ -443,6 +750,7 @@ window.toggleLayerVisibility = (event, islandName) => {
 };
 
 window.zoomToArea = (islandName, areaName) => {
+  setActiveAreaItem(islandName, areaName);
   const layerGroup = allIslandLayers[islandName];
   if (!layerGroup) return;
 
@@ -457,7 +765,7 @@ window.zoomToArea = (islandName, areaName) => {
       const currentZoom = map.getZoom();
       const needsFlyToBounds = !alreadyFits || currentZoom < (targetFitZoom - 0.05);
       const needsMove = needsFlyToBounds || !alreadyCentered;
-      const noSelectionVisible = !document.getElementById("info-sidebar").classList.contains("active");
+      const noSelectionVisible = !infoSidebarEl.classList.contains("active");
 
       map.stop();
 
@@ -708,7 +1016,21 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   content.scrollTop = 0;
-  document.getElementById("info-sidebar").classList.add("active");
+  const minimizedTitle = features.length === 1
+    ? (getVal(features[0].properties, "Full_name") || getVal(features[0].properties, "Full_Name") || "Area details")
+    : `${features.length} Areas Selected`;
+  updateInfoBannerTitle(minimizedTitle);
+
+  if (isMobileView()) {
+    setInfoSidebarState("minimized");
+  } else {
+    setInfoSidebarState("expanded");
+  }
+
+  if (isMobileView() && mapSidebarEl) {
+    setMapSidebarMobileState("peek");
+  }
+
   hasEverSelected = true;
   hideInfoHint();
 
@@ -720,7 +1042,7 @@ function openInfoPanel(latlng, features, options = {}) {
 }
 
 window.closeInfoPanel = () => {
-  document.getElementById("info-sidebar").classList.remove("active");
+  setInfoSidebarState("hidden");
 };
 
 function splitFeaturesByIsland(features) {
@@ -787,6 +1109,14 @@ async function loadAllFromSingleService() {
             });
 
             if (hits.length) {
+              if (hits.length === 1) {
+                const selectedIsland = getVal(hits[0].properties, "Island");
+                const selectedArea = getVal(hits[0].properties, "Full_Name") || getVal(hits[0].properties, "Full_name");
+                setActiveAreaItem(selectedIsland, selectedArea);
+              } else {
+                setActiveAreaItem(null, null);
+              }
+
               openInfoPanel(e.latlng, hits, { source: "map" });
             } else {
               clearMapSelection({ fromClick: true });
