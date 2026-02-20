@@ -64,6 +64,10 @@ const normalizeHawaiianText = (str) => {
 
 const mapSidebarEl = document.getElementById("map-sidebar");
 const sidebarToggleEl = document.getElementById("sidebar-toggle");
+const infoSidebarEl = document.getElementById("info-sidebar");
+const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
+
+const isMobileView = () => mobileMediaQuery.matches;
 
 const syncSidebarToggleUI = () => {
   if (!mapSidebarEl || !sidebarToggleEl) return;
@@ -82,7 +86,30 @@ window.toggleSidebar = () => {
 syncSidebarToggleUI();
 
 const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
-L.control.zoom({ position: "topright" }).addTo(map);
+const zoomControl = L.control.zoom({ position: isMobileView() ? "bottomright" : "topright" }).addTo(map);
+
+function syncLeafletControlPosition() {
+  const targetPosition = isMobileView() ? "bottomright" : "topright";
+  if (zoomControl.options.position === targetPosition) return;
+  map.removeControl(zoomControl);
+  zoomControl.setPosition(targetPosition);
+  zoomControl.addTo(map);
+}
+
+function syncResponsiveSidebarState() {
+  if (!mapSidebarEl) return;
+
+  if (isMobileView()) {
+    mapSidebarEl.classList.remove("collapsed");
+  }
+
+  syncSidebarToggleUI();
+  syncLeafletControlPosition();
+}
+
+mobileMediaQuery.addEventListener("change", syncResponsiveSidebarState);
+window.addEventListener("resize", syncResponsiveSidebarState);
+syncResponsiveSidebarState();
 
 L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -95,6 +122,8 @@ L.tileLayer(
 ).addTo(map);
 
 function getLeftOverlayWidth() {
+  if (isMobileView()) return 0;
+
   const mapRect = map.getContainer().getBoundingClientRect();
   const sidebarRect = document.getElementById("map-sidebar")?.getBoundingClientRect();
   const infoRect = document.getElementById("info-sidebar")?.classList.contains("active")
@@ -280,6 +309,22 @@ function clearMapSelection(options = {}) {
 }
 
 function getVisibleMapRect(padding = 30) {
+  if (isMobileView()) {
+    const size = map.getSize();
+    const brandBottom = document.querySelector(".brand-panel")?.getBoundingClientRect().bottom || 0;
+    const mapTop = map.getContainer().getBoundingClientRect().top;
+    const topInset = Math.max(padding, Math.ceil(brandBottom - mapTop) + 10);
+    const bottomInset = infoSidebarEl?.classList.contains("active") ? Math.round(size.y * 0.58) : Math.round(size.y * 0.45);
+
+    return {
+      left: padding,
+      right: size.x - padding,
+      top: topInset,
+      bottom: Math.max(topInset + 20, size.y - bottomInset),
+      centerX: size.x / 2
+    };
+  }
+
   const size = map.getSize();
   const leftOverlayWidth = getLeftOverlayWidth();
 
@@ -293,6 +338,13 @@ function getVisibleMapRect(padding = 30) {
 }
 
 function getTargetFitZoom(bounds) {
+  if (isMobileView()) {
+    const mobileRect = getVisibleMapRect();
+    const padX = Math.max(30, map.getSize().x - (mobileRect.right - mobileRect.left));
+    const padY = Math.max(30, map.getSize().y - (mobileRect.bottom - mobileRect.top));
+    return map.getBoundsZoom(bounds, false, L.point(padX, padY));
+  }
+
   const leftOverlayWidth = getLeftOverlayWidth();
   return map.getBoundsZoom(bounds, false, L.point(leftOverlayWidth + 30, 30));
 }
@@ -708,7 +760,13 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   content.scrollTop = 0;
-  document.getElementById("info-sidebar").classList.add("active");
+  infoSidebarEl.classList.add("active");
+
+  if (isMobileView() && mapSidebarEl) {
+    mapSidebarEl.classList.add("collapsed");
+    syncSidebarToggleUI();
+  }
+
   hasEverSelected = true;
   hideInfoHint();
 
@@ -720,7 +778,7 @@ function openInfoPanel(latlng, features, options = {}) {
 }
 
 window.closeInfoPanel = () => {
-  document.getElementById("info-sidebar").classList.remove("active");
+  infoSidebarEl.classList.remove("active");
 };
 
 function splitFeaturesByIsland(features) {
