@@ -316,9 +316,9 @@ body, html {
   .brand-title-sub { font-size: 11px; }
 
   .pane-stage {
-    position: absolute;
-    left: 0;
+    position: fixed;
     bottom: 0;
+    left: 0;
     width: 200vw;
     height: 60dvh;
     display: flex;
@@ -330,7 +330,7 @@ body, html {
   }
 
   .pane-stage.is-info-view {
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(-50vw) translateY(0);
   }
 
   .pane-stage.is-minimized {
@@ -338,7 +338,7 @@ body, html {
   }
 
   .pane-stage.is-info-view.is-minimized {
-    transform: translateX(-50%) translateY(calc(100% - 48px));
+    transform: translateX(-50vw) translateY(calc(100% - 48px));
   }
 
   .map-sidebar,
@@ -360,12 +360,6 @@ body, html {
 
   .map-sidebar {
     z-index: 1;
-  }
-  .map-sidebar.is-active-pane {
-    transform: translateX(0) translateY(0);
-  }
-  .map-interface.mobile-stage-info .map-sidebar {
-    transform: translateX(-100%) translateY(0);
   }
   .map-sidebar[data-mobile-state="open"] { transform: translateX(0) translateY(0); }
   .map-sidebar[data-mobile-state="minimized"] { transform: translateX(0) translateY(calc(100% - 46px)); }
@@ -430,14 +424,26 @@ body, html {
     transform: translate(-50%, -50%);
     width: 0;
     height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-top: 9px solid #ffffff;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid #ffffff;
     transition: transform 0.25s ease;
   }
 
   .sheet-handle.is-expanded::before {
     transform: translate(-50%, -50%) rotate(180deg);
+  }
+
+  .map-sidebar .sheet-banner {
+    position: relative;
+  }
+
+  .map-sidebar .sheet-handle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
   }
 
   .sheet-banner-title {
@@ -458,6 +464,13 @@ body, html {
     font-size: 10px;
     letter-spacing: 0.04em;
     font-weight: 700;
+  }
+
+  .info-sidebar .sheet-banner-action {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .sheet-banner-right-action {

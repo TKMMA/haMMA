@@ -8,7 +8,6 @@ let infoHintEl = null;
 let infoHintTimer = null;
 let hasEverSelected = false;
 let activeAreaSelection = null;
-let mobileInfoBannerTitle = "AREA INFO";
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -85,9 +84,8 @@ function setMobileVerticalState(isMinimized) {
 
 function toggleMobileStageMinimized() {
   if (!isMobileView() || !paneStageEl) return false;
-  const nextMinimized = !paneStageEl.classList.contains("is-minimized");
-  setMobileVerticalState(nextMinimized);
-  return nextMinimized;
+  paneStageEl.classList.toggle("is-minimized");
+  return paneStageEl.classList.contains("is-minimized");
 }
 
 function setInfoSidebarState(state = "hidden") {
@@ -219,7 +217,9 @@ function updateMapSidebarBanner() {
     expanded: isOpen,
     onToggle: () => {
       const minimized = toggleMobileStageMinimized();
-      setMapSidebarMobileState(minimized ? "minimized" : "open");
+      mapSidebarEl.dataset.mobileState = minimized ? "minimized" : "open";
+      mapSidebarEl.classList.toggle("collapsed", minimized);
+      updateMapSidebarBanner();
     },
     actionGridColumn: "1",
     titleGridColumn: "2",
@@ -228,16 +228,14 @@ function updateMapSidebarBanner() {
   });
 }
 
-function updateInfoBannerTitle(titleText) {
+function updateInfoBannerTitle() {
   if (!isMobileView()) return;
 
   const state = infoSidebarEl?.dataset.mobileState || "hidden";
   const isOpen = state === "open";
 
-  const bannerTitle = titleText || mobileInfoBannerTitle || "AREA INFO";
-
   ensureSidebarBanner(infoSidebarEl, {
-    title: bannerTitle,
+    title: "AREA INFO",
     handleLabel: "Area Info",
     expanded: isOpen,
     showHandle: false,
@@ -246,6 +244,7 @@ function updateInfoBannerTitle(titleText) {
     actionLabel: "Back to Areas List",
     onAction: () => {
       if (!isMobileView()) return;
+      setMobileVerticalState(false);
       setMapSidebarMobileState("open");
       setMobilePaneStage("list");
       setTimeout(() => setInfoSidebarState("hidden"), 320);
@@ -330,6 +329,7 @@ window.addEventListener("resize", syncResponsiveSidebarState);
 syncResponsiveSidebarState();
 
 if (isMobileView()) {
+  setMobilePaneStage("list");
   setMobileVerticalState(true);
 }
 
@@ -1012,8 +1012,7 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   content.scrollTop = 0;
-  mobileInfoBannerTitle = features.length > 1 ? `${features.length} AREAS SELECTED` : "AREA INFO";
-  updateInfoBannerTitle(mobileInfoBannerTitle);
+  updateInfoBannerTitle();
 
   if (isMobileView()) {
     setMapSidebarMobileState("open");
@@ -1034,8 +1033,6 @@ function openInfoPanel(latlng, features, options = {}) {
 }
 
 window.closeInfoPanel = () => {
-  mobileInfoBannerTitle = "AREA INFO";
-
   if (isMobileView()) {
     setMapSidebarMobileState("minimized");
     setMobilePaneStage("list");
