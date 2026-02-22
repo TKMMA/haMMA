@@ -30,7 +30,10 @@ body, html {
   height: 100vh;
   position: relative;
   overflow: hidden;
+  overflow-x: hidden;
 }
+
+.pane-stage { display: contents; }
 
 #map { position: absolute; inset: 0; z-index: 1; }
 
@@ -130,7 +133,7 @@ body, html {
   align-items: flex-start;
   transition: left var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
 }
-.map-sidebar.collapsed ~ .sidebar-toggle-rail {
+.map-interface.sidebar-collapsed .sidebar-toggle-rail {
   left: calc(var(--panel-margin) + var(--collapsed-width) + (var(--panel-gap) / 2) - 9px);
 }
 
@@ -312,25 +315,53 @@ body, html {
   .brand-title-main { font-size: 16px; }
   .brand-title-sub { font-size: 11px; }
 
+  .pane-stage {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 200vw;
+    height: 60dvh;
+    display: flex;
+    transform: translateX(0) translateY(0);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1005;
+  }
+
+  .pane-stage.is-info-view {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .pane-stage.is-minimized {
+    transform: translateX(0) translateY(calc(100% - 48px));
+  }
+
+  .pane-stage.is-info-view.is-minimized {
+    transform: translateX(-50%) translateY(calc(100% - 48px));
+  }
+
   .map-sidebar,
   .info-sidebar {
+    position: relative;
     top: auto;
-    right: 0;
-    bottom: 0;
+    left: initial;
+    right: initial;
+    bottom: initial;
     width: 100vw;
-    height: 60vh;
-    min-height: 60vh;
-    max-height: 60vh;
+    height: 60dvh;
+    min-height: 60dvh;
+    max-height: 60dvh;
     margin: 0;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.25);
-    transition: transform 0.3s ease-in-out;
     will-change: transform;
+    flex: 0 0 50%;
   }
 
   .map-sidebar {
-    z-index: 1005;
-    transform: translateX(0) translateY(calc(100% - 48px));
+    z-index: 1;
+  }
+  .map-sidebar.is-active-pane {
+    transform: none;
   }
   .map-sidebar.is-active-pane {
     transform: translateX(0) translateY(0);
@@ -346,17 +377,16 @@ body, html {
   .map-sidebar.collapsed .island-list { display: none; }
 
   .info-sidebar {
-    z-index: 1007;
-    transform: translateX(100%) translateY(calc(100% - 48px));
+    z-index: 1;
   }
   .info-sidebar.is-active-pane {
-    transform: translateX(100%) translateY(0);
+    transform: none;
   }
-  .map-interface.mobile-stage-info .info-sidebar {
-    transform: translateX(0) translateY(0);
+  .pane-stage.is-info-view .info-sidebar {
+    transform: none;
   }
   .info-sidebar:not(.active) {
-    transform: translateX(100%) translateY(calc(100% - 48px));
+    transform: none;
   }
   .info-sidebar .close-info-btn {
     top: 10px;

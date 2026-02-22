@@ -24,25 +24,32 @@
 
     </div>
 
-    <aside id="map-sidebar" class="map-sidebar">
-      <div class="sidebar-search-wrap">
-        <div class="search-input-wrapper">
-          <input
-            type="text"
-            id="area-search"
-            placeholder="Search areas..."
-            onkeyup="filterSidebar()"
-            autocomplete="off"
-            spellcheck="false"
-          />
-          <span class="search-icon" aria-hidden="true">🔍</span>
+    <div class="pane-stage" id="pane-stage">
+      <aside id="map-sidebar" class="map-sidebar">
+        <div class="sidebar-search-wrap">
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              id="area-search"
+              placeholder="Search areas..."
+              onkeyup="filterSidebar()"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span class="search-icon" aria-hidden="true">🔍</span>
+          </div>
         </div>
-      </div>
 
-      <div id="island-list" class="island-list">
-        <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
-      </div>
-    </aside>
+        <div id="island-list" class="island-list">
+          <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
+        </div>
+      </aside>
+
+      <aside id="info-sidebar" class="info-sidebar">
+        <button onclick="clearMapSelection()" class="close-info-btn" title="Close Area Info" aria-label="Close Area Info" type="button">✕</button>
+        <div id="info-content" class="info-content"></div>
+      </aside>
+    </div>
 
     <div class="sidebar-toggle-rail">
       <button
@@ -55,11 +62,6 @@
         type="button"
       >◀</button>
     </div>
-
-    <aside id="info-sidebar" class="info-sidebar">
-      <button onclick="clearMapSelection()" class="close-info-btn" title="Close Area Info" aria-label="Close Area Info" type="button">✕</button>
-      <div id="info-content" class="info-content"></div>
-    </aside>
 
     <div id="map"></div>
   </div>
