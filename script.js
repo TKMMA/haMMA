@@ -80,11 +80,11 @@ function setInfoSidebarState(state = "hidden") {
   if (isMobileView()) updateInfoBannerTitle();
 }
 
-function setMapSidebarMobileState(state = "closed") {
+function setMapSidebarMobileState(state = "minimized") {
   if (!mapSidebarEl || !isMobileView()) return;
 
   mapSidebarEl.dataset.mobileState = state;
-  mapSidebarEl.classList.toggle("collapsed", state === "closed");
+  mapSidebarEl.classList.toggle("collapsed", state !== "open");
   updateMapSidebarBanner();
 }
 
@@ -151,20 +151,27 @@ function ensureSidebarBanner(sidebarEl, options = {}) {
     actionEl.onclick = null;
   }
 
+  actionEl.style.gridColumn = options.actionGridColumn || "3";
+  handleEl.style.gridColumn = options.handleGridColumn || "1";
+  titleEl.style.gridColumn = options.titleGridColumn || "2";
+
   return banner;
 }
 
 function updateMapSidebarBanner() {
   if (!isMobileView()) return;
 
-  const state = mapSidebarEl?.dataset.mobileState || "closed";
+  const state = mapSidebarEl?.dataset.mobileState || "minimized";
   const isOpen = state === "open";
 
   ensureSidebarBanner(mapSidebarEl, {
     title: "Areas List",
     handleLabel: isOpen ? "Collapse Areas List" : "Expand Areas List",
     handleIcon: isOpen ? "⌄" : "⌃",
-    onToggle: () => setMapSidebarMobileState(isOpen ? "closed" : "open")
+    onToggle: () => setMapSidebarMobileState(isOpen ? "minimized" : "open"),
+    actionGridColumn: "3",
+    handleGridColumn: "1",
+    titleGridColumn: "2"
   });
 }
 
@@ -183,11 +190,14 @@ function updateInfoBannerTitle() {
       setInfoSidebarState(isOpen ? "minimized" : "open");
     },
     actionText: "←",
-    actionLabel: "Show Areas List",
+    actionLabel: "Back to Areas List",
     onAction: () => {
       setInfoSidebarState("hidden");
       setMapSidebarMobileState("open");
-    }
+    },
+    actionGridColumn: "1",
+    handleGridColumn: "2",
+    titleGridColumn: "2"
   });
 }
 
@@ -203,9 +213,8 @@ window.toggleSidebar = () => {
   if (!mapSidebarEl) return;
 
   if (isMobileView()) {
-    const currentState = mapSidebarEl.dataset.mobileState || "closed";
-    setMapSidebarMobileState(currentState === "closed" ? "open" : "closed");
-    updateMapSidebarBanner();
+    const currentState = mapSidebarEl.dataset.mobileState || "minimized";
+    setMapSidebarMobileState(currentState === "open" ? "minimized" : "open");
     return;
   }
 
@@ -230,7 +239,8 @@ function syncResponsiveSidebarState() {
   if (!mapSidebarEl) return;
 
   if (isMobileView()) {
-    setMapSidebarMobileState(mapSidebarEl.dataset.mobileState === "open" ? "open" : "closed");
+    const listState = mapSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
+    setMapSidebarMobileState(listState);
 
     if (infoSidebarEl.classList.contains("active")) {
       const infoState = infoSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
@@ -937,7 +947,7 @@ function openInfoPanel(latlng, features, options = {}) {
   updateInfoBannerTitle();
 
   if (isMobileView()) {
-    setMapSidebarMobileState("closed");
+    setMapSidebarMobileState("hidden-left");
     setInfoSidebarState("open");
   } else {
     setInfoSidebarState("expanded");
@@ -957,8 +967,7 @@ window.closeInfoPanel = () => {
   setInfoSidebarState("hidden");
 
   if (isMobileView()) {
-    setMapSidebarMobileState("open");
-    updateMapSidebarBanner();
+    setMapSidebarMobileState("minimized");
   }
 };
 
