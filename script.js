@@ -8,7 +8,6 @@ let infoHintEl = null;
 let infoHintTimer = null;
 let hasEverSelected = false;
 let activeAreaSelection = null;
-let mobileSheetDragState = null;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -68,70 +67,47 @@ const mapSidebarEl = document.getElementById("map-sidebar");
 const sidebarToggleEl = document.getElementById("sidebar-toggle");
 const infoSidebarEl = document.getElementById("info-sidebar");
 const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
+const mapInterfaceEl = document.querySelector(".map-interface");
+const paneStageEl = document.getElementById("pane-stage");
 
 const isMobileView = () => mobileMediaQuery.matches;
+
+function setMobilePaneStage(stage = "list") {
+  if (!isMobileView() || !paneStageEl) return;
+  paneStageEl.classList.toggle("is-info-view", stage === "info");
+}
+
+function setMobileVerticalState(isMinimized) {
+  if (!isMobileView() || !paneStageEl) return;
+  paneStageEl.classList.toggle("is-minimized", Boolean(isMinimized));
+}
 
 function setInfoSidebarState(state = "hidden") {
   if (!infoSidebarEl) return;
 
-  infoSidebarEl.classList.remove("active");
+  const nextState = isMobileView() && state === "expanded" ? "open" : state;
+  infoSidebarEl.dataset.mobileState = nextState;
+  infoSidebarEl.classList.toggle("active", state !== "hidden");
+  infoSidebarEl.classList.toggle("is-active-pane", nextState === "open");
+  if (nextState === "open") setMobileVerticalState(false);
 
-  if (state === "hidden") {
-    infoSidebarEl.dataset.mobileState = "hidden";
-    return;
-  }
-
-  infoSidebarEl.classList.add("active");
-
-  if (!isMobileView()) {
-    infoSidebarEl.dataset.mobileState = "expanded";
-    return;
-  }
-
-  const targetHeight = state === "expanded"
-    ? Math.round(window.innerHeight * 0.9)
-    : 80;
-
-  infoSidebarEl.style.setProperty("--info-sheet-height", `${targetHeight}px`);
-  infoSidebarEl.dataset.mobileState = state;
+  if (isMobileView()) updateInfoBannerTitle();
 }
 
-function setMapSidebarMobileState(state = "half") {
+function setMapSidebarMobileState(state = "minimized") {
   if (!mapSidebarEl || !isMobileView()) return;
 
-  const viewportHeight = window.innerHeight;
-  const sheetHeights = {
-    peek: 80,
-    half: Math.round(viewportHeight * 0.5),
-    full: Math.round(viewportHeight * 0.95)
-  };
-
-  const targetHeight = sheetHeights[state] || sheetHeights.half;
-  mapSidebarEl.style.setProperty("--map-sheet-height", `${targetHeight}px`);
   mapSidebarEl.dataset.mobileState = state;
-  mapSidebarEl.classList.toggle("collapsed", state === "peek");
-  syncSidebarToggleUI();
+  mapSidebarEl.classList.toggle("collapsed", state !== "open");
+  mapSidebarEl.classList.toggle("is-active-pane", state === "open");
+  setMobileVerticalState(state !== "open");
+  updateMapSidebarBanner();
 }
 
-function snapMapSidebarByHeight(heightPx) {
-  const viewportHeight = window.innerHeight;
-  const states = [
-    { key: "peek", value: 80 },
-    { key: "half", value: Math.round(viewportHeight * 0.5) },
-    { key: "full", value: Math.round(viewportHeight * 0.95) }
-  ];
+function setMapSidebarDesktopState(state = "open") {
+  if (!mapSidebarEl || isMobileView()) return;
 
-  const nearest = states.reduce((best, state) => (
-    Math.abs(state.value - heightPx) < Math.abs(best.value - heightPx) ? state : best
-  ), states[0]);
-
-  setMapSidebarMobileState(nearest.key);
-}
-
-function snapInfoSidebarByHeight(heightPx) {
-  const expanded = Math.round(window.innerHeight * 0.9);
-  const nearest = Math.abs(heightPx - 80) <= Math.abs(heightPx - expanded) ? "minimized" : "expanded";
-  setInfoSidebarState(nearest);
+  mapSidebarEl.classList.toggle("collapsed", state === "closed");
 }
 
 function setActiveAreaItem(islandName, areaName) {
@@ -159,7 +135,6 @@ function ensureSidebarBanner(sidebarEl, options = {}) {
     const handle = document.createElement("button");
     handle.type = "button";
     handle.className = "sheet-handle";
-    handle.setAttribute("aria-label", options.handleLabel || "Resize panel");
 
     const title = document.createElement("span");
     title.className = "sheet-banner-title";
@@ -172,122 +147,98 @@ function ensureSidebarBanner(sidebarEl, options = {}) {
     sidebarEl.prepend(banner);
   }
 
+  const handleEl = banner.querySelector(".sheet-handle");
   const titleEl = banner.querySelector(".sheet-banner-title");
   const actionEl = banner.querySelector(".sheet-banner-action");
 
-  if (options.title) {
-    titleEl.textContent = options.title;
-  }
+  titleEl.textContent = options.title || "";
+
+  if (options.handleLabel) handleEl.setAttribute("aria-label", options.handleLabel);
+  if (options.handleIcon) handleEl.textContent = options.handleIcon;
+  handleEl.onclick = null;
 
   if (options.actionText) {
     actionEl.textContent = options.actionText;
     actionEl.style.display = "inline-flex";
-    actionEl.onclick = options.onAction || null;
+    actionEl.onclick = (event) => {
+      event.stopPropagation();
+      if (options.onAction) options.onAction();
+    };
+    if (options.actionLabel) actionEl.setAttribute("aria-label", options.actionLabel);
   } else {
     actionEl.style.display = "none";
     actionEl.onclick = null;
   }
 
-  return banner.querySelector(".sheet-handle");
+  actionEl.style.gridColumn = options.actionGridColumn || "3";
+  handleEl.style.gridColumn = options.handleGridColumn || "1";
+  titleEl.style.gridColumn = options.titleGridColumn || "2";
+
+  banner.onclick = options.onToggle ? () => options.onToggle() : null;
+
+  return banner;
 }
 
-function updateInfoBannerTitle(titleText) {
+function updateMapSidebarBanner() {
+  if (!isMobileView()) return;
+
+  const state = mapSidebarEl?.dataset.mobileState || "minimized";
+  const isOpen = state === "open";
+
+  ensureSidebarBanner(mapSidebarEl, {
+    title: "Areas List",
+    handleLabel: isOpen ? "Collapse Areas List" : "Expand Areas List",
+    handleIcon: isOpen ? "⌄" : "⌃",
+    onToggle: () => setMapSidebarMobileState(isOpen ? "minimized" : "open"),
+    actionGridColumn: "3",
+    handleGridColumn: "1",
+    titleGridColumn: "2"
+  });
+}
+
+function updateInfoBannerTitle() {
+  if (!isMobileView()) return;
+
+  const state = infoSidebarEl?.dataset.mobileState || "hidden";
+  const isOpen = state === "open";
+
   ensureSidebarBanner(infoSidebarEl, {
-    handleLabel: "Resize details panel",
-    title: titleText || "Area details",
-    actionText: "List",
+    title: "Area Info",
+    handleLabel: isOpen ? "Collapse Area Info" : "Expand Area Info",
+    handleIcon: isOpen ? "⌄" : "⌃",
+    onToggle: () => {
+      if (infoSidebarEl.dataset.mobileState === "hidden") return;
+      setInfoSidebarState(isOpen ? "minimized" : "open");
+    },
+    actionText: "←",
+    actionLabel: "Back to Areas List",
     onAction: () => {
       if (!isMobileView()) return;
-      setInfoSidebarState("hidden");
-      setMapSidebarMobileState("half");
-    }
+      setMapSidebarMobileState("open");
+      setMobilePaneStage("list");
+      setTimeout(() => setInfoSidebarState("hidden"), 320);
+    },
+    actionGridColumn: "1",
+    handleGridColumn: "3",
+    titleGridColumn: "2"
   });
-}
-
-function attachDraggableHandle(sidebarEl, mode) {
-  const handle = ensureSidebarBanner(sidebarEl, {
-    handleLabel: mode === "info" ? "Resize details panel" : "Resize navigation panel",
-    title: mode === "map" ? "Managed Areas" : "Area details",
-    actionText: mode === "info" ? "List" : null,
-    onAction: mode === "info"
-      ? () => {
-        if (!isMobileView()) return;
-        setInfoSidebarState("hidden");
-        setMapSidebarMobileState("half");
-      }
-      : null
-  });
-
-  if (!handle || handle.dataset.dragBound === "1") return;
-  handle.dataset.dragBound = "1";
-
-  handle.addEventListener("pointerdown", (event) => {
-    if (!isMobileView()) return;
-
-    const sidebarVar = mode === "info" ? "--info-sheet-height" : "--map-sheet-height";
-    const startHeight = parseFloat(getComputedStyle(sidebarEl).getPropertyValue(sidebarVar)) || sidebarEl.getBoundingClientRect().height;
-
-    mobileSheetDragState = {
-      mode,
-      startY: event.clientY,
-      startHeight
-    };
-
-    handle.setPointerCapture(event.pointerId);
-    event.preventDefault();
-  });
-
-  handle.addEventListener("pointermove", (event) => {
-    if (!mobileSheetDragState || mobileSheetDragState.mode != mode) return;
-
-    const delta = mobileSheetDragState.startY - event.clientY;
-    const viewportHeight = window.innerHeight;
-
-    if (mode === "info") {
-      const next = Math.max(80, Math.min(Math.round(viewportHeight * 0.9), mobileSheetDragState.startHeight + delta));
-      sidebarEl.style.setProperty("--info-sheet-height", `${next}px`);
-      sidebarEl.dataset.mobileState = next > 220 ? "expanded" : "minimized";
-    } else {
-      const next = Math.max(80, Math.min(Math.round(viewportHeight * 0.95), mobileSheetDragState.startHeight + delta));
-      sidebarEl.style.setProperty("--map-sheet-height", `${next}px`);
-      sidebarEl.dataset.mobileState = next > 300 ? "full" : next > 130 ? "half" : "peek";
-      sidebarEl.classList.toggle("collapsed", sidebarEl.dataset.mobileState === "peek");
-    }
-  });
-
-  const endDrag = () => {
-    if (!mobileSheetDragState || mobileSheetDragState.mode != mode) return;
-
-    const sheetVar = mode === "info" ? "--info-sheet-height" : "--map-sheet-height";
-    const finalHeight = parseFloat(getComputedStyle(sidebarEl).getPropertyValue(sheetVar)) || 80;
-
-    if (mode === "info") {
-      snapInfoSidebarByHeight(finalHeight);
-    } else {
-      snapMapSidebarByHeight(finalHeight);
-    }
-
-    mobileSheetDragState = null;
-  };
-
-  handle.addEventListener("pointerup", endDrag);
-  handle.addEventListener("pointercancel", endDrag);
 }
 
 const syncSidebarToggleUI = () => {
   if (!mapSidebarEl || !sidebarToggleEl) return;
   const collapsed = mapSidebarEl.classList.contains("collapsed");
   sidebarToggleEl.textContent = collapsed ? "▶" : "◀";
-  sidebarToggleEl.title = collapsed ? "Show Navigation" : "Collapse";
-  sidebarToggleEl.setAttribute("aria-label", collapsed ? "Show Navigation" : "Collapse");
+  sidebarToggleEl.title = collapsed ? "Show Areas List" : "Collapse Areas List";
+  sidebarToggleEl.setAttribute("aria-label", collapsed ? "Show Areas List" : "Collapse Areas List");
+  if (mapInterfaceEl) mapInterfaceEl.classList.toggle("sidebar-collapsed", collapsed);
 };
 
 window.toggleSidebar = () => {
   if (!mapSidebarEl) return;
 
   if (isMobileView()) {
-    const currentState = mapSidebarEl.dataset.mobileState || "half";
-    setMapSidebarMobileState(currentState === "peek" ? "half" : "peek");
+    const currentState = mapSidebarEl.dataset.mobileState || "minimized";
+    setMapSidebarMobileState(currentState === "open" ? "minimized" : "open");
     return;
   }
 
@@ -296,8 +247,6 @@ window.toggleSidebar = () => {
 };
 
 syncSidebarToggleUI();
-attachDraggableHandle(mapSidebarEl, "map");
-attachDraggableHandle(infoSidebarEl, "info");
 
 const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
 const zoomControl = L.control.zoom({ position: isMobileView() ? "bottomright" : "topright" }).addTo(map);
@@ -314,19 +263,23 @@ function syncResponsiveSidebarState() {
   if (!mapSidebarEl) return;
 
   if (isMobileView()) {
-    setMapSidebarMobileState(mapSidebarEl.dataset.mobileState || "full");
+    const listState = mapSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
+    setMapSidebarMobileState(listState);
 
     if (infoSidebarEl.classList.contains("active")) {
-      setInfoSidebarState(infoSidebarEl.dataset.mobileState === "expanded" ? "expanded" : "minimized");
+      const infoState = infoSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
+      setInfoSidebarState(infoState);
+      setMobilePaneStage("info");
     } else {
       setInfoSidebarState("hidden");
+      setMobilePaneStage("list");
+      setMobileVerticalState(listState !== "open");
     }
   } else {
-    mapSidebarEl.style.removeProperty("--map-sheet-height");
-    infoSidebarEl.style.removeProperty("--info-sheet-height");
+    if (paneStageEl) paneStageEl.classList.remove("is-info-view", "is-minimized");
     mapSidebarEl.dataset.mobileState = "desktop";
     infoSidebarEl.dataset.mobileState = infoSidebarEl.classList.contains("active") ? "expanded" : "hidden";
-    mapSidebarEl.classList.remove("collapsed");
+    setMapSidebarDesktopState("open");
   }
 
   syncSidebarToggleUI();
@@ -1016,19 +969,14 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   content.scrollTop = 0;
-  const minimizedTitle = features.length === 1
-    ? (getVal(features[0].properties, "Full_name") || getVal(features[0].properties, "Full_Name") || "Area details")
-    : `${features.length} Areas Selected`;
-  updateInfoBannerTitle(minimizedTitle);
+  updateInfoBannerTitle();
 
   if (isMobileView()) {
-    setInfoSidebarState("minimized");
+    setMapSidebarMobileState("open");
+    setInfoSidebarState("open");
+    setMobilePaneStage("info");
   } else {
     setInfoSidebarState("expanded");
-  }
-
-  if (isMobileView() && mapSidebarEl) {
-    setMapSidebarMobileState("peek");
   }
 
   hasEverSelected = true;
@@ -1042,6 +990,13 @@ function openInfoPanel(latlng, features, options = {}) {
 }
 
 window.closeInfoPanel = () => {
+  if (isMobileView()) {
+    setMapSidebarMobileState("minimized");
+    setMobilePaneStage("list");
+    setTimeout(() => setInfoSidebarState("hidden"), 320);
+    return;
+  }
+
   setInfoSidebarState("hidden");
 };
 
