@@ -317,11 +317,12 @@ body, html {
 
   .pane-stage {
     position: fixed;
-    bottom: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
     left: 0;
     width: 200vw;
     height: 60dvh;
     display: flex;
+    gap: 0;
     padding-bottom: env(safe-area-inset-bottom);
     transform: translateX(0) translateY(0);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -330,7 +331,7 @@ body, html {
   }
 
   .pane-stage.is-info-view {
-    transform: translateX(-50vw) translateY(0);
+    transform: translateX(-100vw) translateY(0);
   }
 
   .pane-stage.is-minimized {
@@ -338,7 +339,7 @@ body, html {
   }
 
   .pane-stage.is-info-view.is-minimized {
-    transform: translateX(-50vw) translateY(calc(100% - 48px));
+    transform: translateX(-100vw) translateY(calc(100% - 48px));
   }
 
   .map-sidebar,
