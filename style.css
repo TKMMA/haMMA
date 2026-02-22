@@ -324,22 +324,20 @@ body, html {
     display: flex;
     gap: 0;
     padding-bottom: env(safe-area-inset-bottom);
-    transform: translateX(0) translateY(0);
+    --stage-x: 0;
+    --stage-y: 0;
+    transform: translateX(var(--stage-x)) translateY(var(--stage-y));
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1005;
     pointer-events: none;
   }
 
   .pane-stage.is-info-view {
-    transform: translateX(-100vw) translateY(0);
+    --stage-x: -100vw;
   }
 
   .pane-stage.is-minimized {
-    transform: translateX(0) translateY(calc(100% - 48px));
-  }
-
-  .pane-stage.is-info-view.is-minimized {
-    transform: translateX(-100vw) translateY(calc(100% - 48px));
+    --stage-y: calc(60dvh - 48px);
   }
 
   .map-sidebar,
@@ -391,6 +389,7 @@ body, html {
 
   .sheet-banner {
     display: grid;
+    width: 100%;
     pointer-events: auto;
     grid-template-columns: 80px 1fr 80px;
     align-items: center;
@@ -431,7 +430,7 @@ body, html {
     transition: transform 0.25s ease;
   }
 
-  .sheet-handle.is-expanded::before {
+  .pane-stage:not(.is-minimized) .map-sidebar .sheet-handle::before {
     transform: translate(-50%, -50%) rotate(180deg);
   }
 

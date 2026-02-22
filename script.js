@@ -217,9 +217,7 @@ function updateMapSidebarBanner() {
     expanded: isOpen,
     onToggle: () => {
       const minimized = toggleMobileStageMinimized();
-      mapSidebarEl.dataset.mobileState = minimized ? "minimized" : "open";
-      mapSidebarEl.classList.toggle("collapsed", minimized);
-      updateMapSidebarBanner();
+      setMapSidebarMobileState(minimized ? "minimized" : "open");
     },
     actionGridColumn: "1",
     titleGridColumn: "2",
@@ -239,7 +237,11 @@ function updateInfoBannerTitle() {
     handleLabel: "Area Info",
     expanded: isOpen,
     showHandle: false,
-    onToggle: null,
+    onToggle: () => {
+      if (infoSidebarEl.dataset.mobileState === "hidden") return;
+      const minimized = toggleMobileStageMinimized();
+      setInfoSidebarState(minimized ? "minimized" : "open");
+    },
     actionText: "← BACK TO LIST",
     actionLabel: "Back to Areas List",
     onAction: () => {
