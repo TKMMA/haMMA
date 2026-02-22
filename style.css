@@ -361,6 +361,9 @@ body, html {
   .map-sidebar {
     z-index: 1;
   }
+  .map-sidebar[data-mobile-state="open"] { transform: translateX(0) translateY(0); }
+  .map-sidebar[data-mobile-state="minimized"] { transform: translateX(0) translateY(calc(100% - 46px)); }
+  .map-sidebar[data-mobile-state="hidden-left"] { transform: translateX(-100%) translateY(0); }
   .map-sidebar.collapsed { width: 100vw; }
   .map-sidebar.collapsed .sidebar-search-wrap,
   .map-sidebar.collapsed .island-list { display: none; }
