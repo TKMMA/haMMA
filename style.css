@@ -225,8 +225,7 @@ body, html {
   width: 48px;
   height: 24px;
   padding: 0;
-  touch-action: none;
-  cursor: ns-resize;
+  cursor: pointer;
   flex: 0 0 48px;
 }
 
@@ -316,41 +315,44 @@ body, html {
   .map-sidebar,
   .info-sidebar {
     top: auto;
-    left: 0;
     right: 0;
     width: 100vw;
     margin: 0;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.25);
+    transition: transform var(--transition-speed) ease;
+    will-change: transform;
   }
 
   .map-sidebar {
-    --map-sheet-height: 95vh;
+    left: 0;
     bottom: 0;
     z-index: 1005;
-    height: var(--map-sheet-height);
-    max-height: 95vh;
-    min-height: 80px;
-    transform: none;
-    transition: height var(--transition-speed) ease;
-    will-change: height;
+    height: 72vh;
+    max-height: 72vh;
+    min-height: 72vh;
+    transform: translateY(calc(100% - 46px));
+  }
+  .map-sidebar[data-mobile-state="open"] {
+    transform: translateY(0);
   }
   .map-sidebar.collapsed { width: 100vw; }
-  .map-sidebar .island-list { min-height: 0; }
+  .map-sidebar.collapsed .sidebar-search-wrap,
+  .map-sidebar.collapsed .island-list { display: none; }
 
   .info-sidebar {
-    --info-sheet-height: 80px;
+    left: 100%;
     bottom: 0;
-    z-index: 1006;
-    height: var(--info-sheet-height);
-    max-height: 90vh;
-    min-height: 80px;
-    transform: translateY(110%);
-    transition: transform var(--transition-speed) ease, height var(--transition-speed) ease;
-    will-change: transform, height;
+    z-index: 1007;
+    height: 80vh;
+    max-height: 80vh;
+    min-height: 80vh;
+    transform: translateX(0);
   }
-  .info-sidebar.active { transform: translateY(0); }
-  .info-sidebar .close-info-btn { top: 44px; }
+  .info-sidebar.active { transform: translateX(-100%); }
+  .info-sidebar[data-mobile-state="minimized"] { transform: translateX(-100%) translateY(calc(100% - 46px)); }
+  .info-sidebar:not(.active) { transform: translateX(0); }
+  .info-sidebar .close-info-btn { top: 54px; }
   .info-sidebar[data-mobile-state="minimized"] .info-content,
   .info-sidebar[data-mobile-state="minimized"] .close-info-btn { display: none; }
 
@@ -363,11 +365,45 @@ body, html {
     z-index: 998;
   }
 
+  .sheet-banner {
+    display: flex;
+    min-height: 46px;
+    padding: 8px 12px;
+  }
 
-  .sheet-banner { display: flex; }
+  .sheet-handle {
+    border: 0;
+    background: transparent;
+    width: 46px;
+    height: 30px;
+    padding: 0;
+    cursor: pointer;
+    flex: 0 0 46px;
+    color: #5b6d7a;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .sheet-handle::before {
+    content: none;
+  }
+
+  .sheet-banner-title {
+    flex: 1;
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+
+  .sheet-banner-action {
+    min-width: 36px;
+    padding: 4px 8px;
+    justify-content: center;
+  }
 
   .leaflet-bottom.leaflet-right {
-    bottom: min(70vh, calc(100vh - 76px));
+    bottom: 88px;
     right: 10px;
   }
 }
