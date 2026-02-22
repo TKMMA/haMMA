@@ -82,6 +82,13 @@ function setMobileVerticalState(isMinimized) {
   paneStageEl.classList.toggle("is-minimized", Boolean(isMinimized));
 }
 
+function toggleMobileStageMinimized() {
+  if (!isMobileView() || !paneStageEl) return false;
+  const nextMinimized = !paneStageEl.classList.contains("is-minimized");
+  setMobileVerticalState(nextMinimized);
+  return nextMinimized;
+}
+
 function setInfoSidebarState(state = "hidden") {
   if (!infoSidebarEl) return;
 
@@ -143,19 +150,24 @@ function ensureSidebarBanner(sidebarEl, options = {}) {
     action.type = "button";
     action.className = "sheet-banner-action";
 
-    banner.append(handle, title, action);
+    const rightAction = document.createElement("button");
+    rightAction.type = "button";
+    rightAction.className = "sheet-banner-right-action";
+
+    banner.append(action, title, rightAction, handle);
     sidebarEl.prepend(banner);
   }
 
   const handleEl = banner.querySelector(".sheet-handle");
   const titleEl = banner.querySelector(".sheet-banner-title");
   const actionEl = banner.querySelector(".sheet-banner-action");
+  const rightActionEl = banner.querySelector(".sheet-banner-right-action");
 
   titleEl.textContent = options.title || "";
 
   if (options.handleLabel) handleEl.setAttribute("aria-label", options.handleLabel);
-  if (options.handleIcon) handleEl.textContent = options.handleIcon;
-  handleEl.onclick = null;
+  handleEl.classList.toggle("is-expanded", Boolean(options.expanded));
+  handleEl.onclick = (event) => event.stopPropagation();
 
   if (options.actionText) {
     actionEl.textContent = options.actionText;
@@ -170,9 +182,23 @@ function ensureSidebarBanner(sidebarEl, options = {}) {
     actionEl.onclick = null;
   }
 
-  actionEl.style.gridColumn = options.actionGridColumn || "3";
-  handleEl.style.gridColumn = options.handleGridColumn || "1";
+  if (options.rightActionText) {
+    rightActionEl.textContent = options.rightActionText;
+    rightActionEl.style.display = "inline-flex";
+    rightActionEl.onclick = (event) => {
+      event.stopPropagation();
+      if (options.onRightAction) options.onRightAction();
+    };
+    if (options.rightActionLabel) rightActionEl.setAttribute("aria-label", options.rightActionLabel);
+  } else {
+    rightActionEl.style.display = "none";
+    rightActionEl.onclick = null;
+  }
+
+  actionEl.style.gridColumn = options.actionGridColumn || "1";
   titleEl.style.gridColumn = options.titleGridColumn || "2";
+  rightActionEl.style.gridColumn = options.rightActionGridColumn || "3";
+  handleEl.style.gridColumn = options.handleGridColumn || "3";
 
   banner.onclick = options.onToggle ? () => options.onToggle() : null;
 
@@ -186,13 +212,17 @@ function updateMapSidebarBanner() {
   const isOpen = state === "open";
 
   ensureSidebarBanner(mapSidebarEl, {
-    title: "Areas List",
+    title: "AREAS LIST",
     handleLabel: isOpen ? "Collapse Areas List" : "Expand Areas List",
-    handleIcon: isOpen ? "⌄" : "⌃",
-    onToggle: () => setMapSidebarMobileState(isOpen ? "minimized" : "open"),
-    actionGridColumn: "3",
-    handleGridColumn: "1",
-    titleGridColumn: "2"
+    expanded: isOpen,
+    onToggle: () => {
+      const minimized = toggleMobileStageMinimized();
+      setMapSidebarMobileState(minimized ? "minimized" : "open");
+    },
+    actionGridColumn: "1",
+    titleGridColumn: "2",
+    rightActionGridColumn: "3",
+    handleGridColumn: "3"
   });
 }
 
@@ -203,14 +233,15 @@ function updateInfoBannerTitle() {
   const isOpen = state === "open";
 
   ensureSidebarBanner(infoSidebarEl, {
-    title: "Area Info",
+    title: "AREA INFO",
     handleLabel: isOpen ? "Collapse Area Info" : "Expand Area Info",
-    handleIcon: isOpen ? "⌄" : "⌃",
+    expanded: isOpen,
     onToggle: () => {
       if (infoSidebarEl.dataset.mobileState === "hidden") return;
-      setInfoSidebarState(isOpen ? "minimized" : "open");
+      const minimized = toggleMobileStageMinimized();
+      setInfoSidebarState(minimized ? "minimized" : "open");
     },
-    actionText: "←",
+    actionText: "← BACK TO LIST",
     actionLabel: "Back to Areas List",
     onAction: () => {
       if (!isMobileView()) return;
@@ -218,9 +249,13 @@ function updateInfoBannerTitle() {
       setMobilePaneStage("list");
       setTimeout(() => setInfoSidebarState("hidden"), 320);
     },
+    rightActionText: "✕",
+    rightActionLabel: "Close Area Info",
+    onRightAction: () => clearMapSelection(),
     actionGridColumn: "1",
-    handleGridColumn: "3",
-    titleGridColumn: "2"
+    titleGridColumn: "2",
+    rightActionGridColumn: "3",
+    handleGridColumn: "3"
   });
 }
 
