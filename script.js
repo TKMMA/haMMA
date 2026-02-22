@@ -248,6 +248,9 @@ function syncResponsiveSidebarState() {
     } else {
       setInfoSidebarState("hidden");
     }
+
+    updateMapSidebarBanner();
+    updateInfoBannerTitle();
   } else {
     mapSidebarEl.dataset.mobileState = "desktop";
     infoSidebarEl.dataset.mobileState = infoSidebarEl.classList.contains("active") ? "expanded" : "hidden";

@@ -315,7 +315,6 @@ body, html {
   .map-sidebar,
   .info-sidebar {
     top: auto;
-    left: 0;
     right: 0;
     bottom: 0;
     width: 100vw;
