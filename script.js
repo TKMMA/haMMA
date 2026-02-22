@@ -8,6 +8,7 @@ let infoHintEl = null;
 let infoHintTimer = null;
 let hasEverSelected = false;
 let activeAreaSelection = null;
+let mobileInfoBannerTitle = "AREA INFO";
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -167,6 +168,7 @@ function ensureSidebarBanner(sidebarEl, options = {}) {
 
   if (options.handleLabel) handleEl.setAttribute("aria-label", options.handleLabel);
   handleEl.classList.toggle("is-expanded", Boolean(options.expanded));
+  handleEl.style.display = options.showHandle === false ? "none" : "inline-flex";
   handleEl.onclick = (event) => event.stopPropagation();
 
   if (options.actionText) {
@@ -226,21 +228,20 @@ function updateMapSidebarBanner() {
   });
 }
 
-function updateInfoBannerTitle() {
+function updateInfoBannerTitle(titleText) {
   if (!isMobileView()) return;
 
   const state = infoSidebarEl?.dataset.mobileState || "hidden";
   const isOpen = state === "open";
 
+  const bannerTitle = titleText || mobileInfoBannerTitle || "AREA INFO";
+
   ensureSidebarBanner(infoSidebarEl, {
-    title: "AREA INFO",
-    handleLabel: isOpen ? "Collapse Area Info" : "Expand Area Info",
+    title: bannerTitle,
+    handleLabel: "Area Info",
     expanded: isOpen,
-    onToggle: () => {
-      if (infoSidebarEl.dataset.mobileState === "hidden") return;
-      const minimized = toggleMobileStageMinimized();
-      setInfoSidebarState(minimized ? "minimized" : "open");
-    },
+    showHandle: false,
+    onToggle: null,
     actionText: "← BACK TO LIST",
     actionLabel: "Back to Areas List",
     onAction: () => {
@@ -327,6 +328,10 @@ function syncResponsiveSidebarState() {
 mobileMediaQuery.addEventListener("change", syncResponsiveSidebarState);
 window.addEventListener("resize", syncResponsiveSidebarState);
 syncResponsiveSidebarState();
+
+if (isMobileView()) {
+  setMobileVerticalState(true);
+}
 
 L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -1007,7 +1012,8 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   content.scrollTop = 0;
-  updateInfoBannerTitle();
+  mobileInfoBannerTitle = features.length > 1 ? `${features.length} AREAS SELECTED` : "AREA INFO";
+  updateInfoBannerTitle(mobileInfoBannerTitle);
 
   if (isMobileView()) {
     setMapSidebarMobileState("open");
@@ -1028,6 +1034,8 @@ function openInfoPanel(latlng, features, options = {}) {
 }
 
 window.closeInfoPanel = () => {
+  mobileInfoBannerTitle = "AREA INFO";
+
   if (isMobileView()) {
     setMapSidebarMobileState("minimized");
     setMobilePaneStage("list");
