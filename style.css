@@ -317,7 +317,7 @@ body, html {
 
   .pane-stage {
     position: fixed;
-    bottom: 0;
+    bottom: var(--browser-offset, 0px);
     margin-bottom: env(safe-area-inset-bottom, 0px);
     left: 0;
     width: 200vw;
@@ -326,7 +326,7 @@ body, html {
     gap: 0;
     --stage-x: 0;
     --stage-y: calc(60dvh - 48px);
-    transform: translateX(var(--stage-x)) translateY(var(--stage-y));
+    transform: translate(var(--stage-x, 0), var(--stage-y, calc(60dvh - 48px)));
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
     z-index: 1005;
@@ -348,16 +348,11 @@ body, html {
   .map-sidebar,
   .info-sidebar {
     position: relative;
-    top: auto;
-    left: initial;
-    right: initial;
-    bottom: initial;
     width: 100vw;
     height: 60dvh;
     margin: 0;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.25);
-    will-change: transform;
     flex: 0 0 100vw;
     pointer-events: auto;
   }
@@ -446,7 +441,7 @@ body, html {
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
     border-top: 10px solid #ffffff;
-    transition: transform 0.25s ease;
+    transition: transform 0.3s ease;
   }
 
   .pane-stage:not(.is-minimized) .map-sidebar .sheet-handle::before {

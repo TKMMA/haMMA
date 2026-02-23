@@ -82,18 +82,18 @@ function syncMobileBrowserInset() {
   if (!paneStageEl) return;
 
   if (!isMobileView()) {
-    paneStageEl.style.setProperty("--mobile-browser-bar-offset", "0px");
+    paneStageEl.style.setProperty("--browser-offset", "0px");
     return;
   }
 
   const vv = window.visualViewport;
   if (!vv) {
-    paneStageEl.style.setProperty("--mobile-browser-bar-offset", "0px");
+    paneStageEl.style.setProperty("--browser-offset", "0px");
     return;
   }
 
   const overlayInset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
-  paneStageEl.style.setProperty("--mobile-browser-bar-offset", `${overlayInset}px`);
+  paneStageEl.style.setProperty("--browser-offset", `${overlayInset}px`);
 }
 
 function setMobileInfoPaneVisibility(isVisible) {
@@ -273,7 +273,9 @@ function updateMapSidebarBanner() {
     expanded: isOpen,
     onToggle: () => {
       const minimized = toggleMobileStageMinimized();
-      setMapSidebarMobileState(minimized ? "minimized" : "open");
+      mapSidebarEl.dataset.mobileState = minimized ? "minimized" : "open";
+      mapSidebarEl.classList.toggle("collapsed", minimized);
+      updateMapSidebarBanner();
     },
     actionGridColumn: "1",
     titleGridColumn: "2",
@@ -296,7 +298,8 @@ function updateInfoBannerTitle() {
     onToggle: () => {
       if (infoSidebarEl.dataset.mobileState === "hidden") return;
       const minimized = toggleMobileStageMinimized();
-      setInfoSidebarState(minimized ? "minimized" : "open");
+      infoSidebarEl.dataset.mobileState = minimized ? "minimized" : "open";
+      updateInfoBannerTitle();
     },
     actionText: "← BACK TO LIST",
     actionLabel: "Back to Areas List",
