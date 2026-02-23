@@ -8,6 +8,7 @@ let infoHintEl = null;
 let infoHintTimer = null;
 let hasEverSelected = false;
 let activeAreaSelection = null;
+let mobileInfoHideTimer = null;
 
 window.showTab = function (btn, tabId) {
   const section = btn.closest(".area-section");
@@ -553,22 +554,30 @@ function updateClickMarker(latlng) {
 }
 
 function clearMapSelection(options = {}) {
+  const hadSelection = Boolean(activeSelectionMarker || activeAccordionLayer || infoSidebarEl?.classList.contains("active"));
+
   if (activeSelectionMarker) {
     map.removeLayer(activeSelectionMarker);
     activeSelectionMarker = null;
   }
 
-  const hadSelection = Boolean(activeSelectionMarker || activeAccordionLayer || infoSidebarEl?.classList.contains("active"));
-
   clearAccordionSelectionHighlight();
   clearHoverHighlight();
-  window.closeInfoPanel();
   setActiveAreaItem(null, null);
 
   if (isMobileView()) {
+    if (mobileInfoHideTimer) {
+      clearTimeout(mobileInfoHideTimer);
+      mobileInfoHideTimer = null;
+    }
+
     setMobilePaneStage("list");
+    setMapSidebarMobileState("minimized");
     setMobileVerticalState(true);
     setMobileInfoPaneVisibility(false);
+    setInfoSidebarState("hidden");
+  } else {
+    window.closeInfoPanel();
   }
 
   if (options.fromClick && hadSelection && hasEverSelected) {
@@ -1080,10 +1089,20 @@ function openInfoPanel(latlng, features, options = {}) {
 
 window.closeInfoPanel = () => {
   if (isMobileView()) {
+    if (mobileInfoHideTimer) {
+      clearTimeout(mobileInfoHideTimer);
+      mobileInfoHideTimer = null;
+    }
+
     setMobilePaneStage("list");
-    setMobileVerticalState(true);
     setMapSidebarMobileState("minimized");
-    setTimeout(() => setInfoSidebarState("hidden"), 420);
+    setMobileVerticalState(true);
+
+    mobileInfoHideTimer = setTimeout(() => {
+      setInfoSidebarState("hidden");
+      setMobileInfoPaneVisibility(false);
+      mobileInfoHideTimer = null;
+    }, 420);
     return;
   }
 
