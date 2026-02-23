@@ -317,8 +317,8 @@ body, html {
 
   .pane-stage {
     position: fixed;
-    bottom: var(--browser-offset, 0px);
-    margin-bottom: env(safe-area-inset-bottom, 0px);
+    bottom: 0;
+    margin-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--browser-offset, 0px));
     left: 0;
     width: 200vw;
     height: 60dvh;
@@ -373,7 +373,7 @@ body, html {
 
   .sidebar-search-wrap,
   .info-content {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--browser-offset, 0px));
   }
 
   .info-sidebar {
