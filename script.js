@@ -343,6 +343,9 @@ function syncResponsiveSidebarState() {
       setMobilePaneStage("list");
       setMobileVerticalState(listState !== "open");
     }
+
+    updateMapSidebarBanner();
+    updateInfoBannerTitle();
   } else {
     if (paneStageEl) paneStageEl.classList.remove("is-info-view", "is-minimized");
     mapSidebarEl.dataset.mobileState = "desktop";
@@ -1104,6 +1107,10 @@ window.closeInfoPanel = () => {
   }
 
   setInfoSidebarState("hidden");
+
+  if (isMobileView()) {
+    setMapSidebarMobileState("minimized");
+  }
 };
 
 function splitFeaturesByIsland(features) {
