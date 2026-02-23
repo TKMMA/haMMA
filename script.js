@@ -593,6 +593,8 @@ function clearMapSelection(options = {}) {
   setActiveAreaItem(null, null);
 
   if (isMobileView()) {
+    paneStageEl?.classList.remove("is-info-view");
+    paneStageEl?.classList.add("is-minimized");
     setMobileHomeState({ hideInfoAfterTransition: true });
   } else {
     window.closeInfoPanel();
@@ -1087,6 +1089,8 @@ function openInfoPanel(latlng, features, options = {}) {
   updateInfoBannerTitle();
 
   if (isMobileView()) {
+    paneStageEl?.classList.remove("is-minimized");
+    paneStageEl?.classList.add("is-info-view");
     setMobileInfoPaneVisibility(true);
     setMapSidebarMobileState("open");
     setInfoSidebarState("open");

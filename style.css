@@ -318,15 +318,15 @@ body, html {
   .pane-stage {
     position: fixed;
     bottom: 0;
+    margin-bottom: env(safe-area-inset-bottom, 0px);
     left: 0;
     width: 200vw;
     height: 60dvh;
     display: flex;
     gap: 0;
-    padding-bottom: env(safe-area-inset-bottom);
     --stage-x: 0;
-    --stage-y: 0;
-    transform: translateX(var(--stage-x, 0)) translateY(var(--stage-y, 0));
+    --stage-y: calc(60dvh - 48px);
+    transform: translateX(var(--stage-x)) translateY(var(--stage-y));
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
     z-index: 1005;
@@ -375,6 +375,11 @@ body, html {
   }
   .map-sidebar.collapsed .sidebar-search-wrap,
   .map-sidebar.collapsed .island-list { display: none; }
+
+  .sidebar-search-wrap,
+  .info-content {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 
   .info-sidebar {
     z-index: 1;
