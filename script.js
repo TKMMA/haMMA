@@ -106,6 +106,32 @@ function setMobileVerticalState(isMinimized) {
   paneStageEl.classList.toggle("is-minimized", Boolean(isMinimized));
 }
 
+function setMobileHomeState(options = {}) {
+  if (!isMobileView() || !paneStageEl) return;
+
+  setMobilePaneStage("list");
+  setMapSidebarMobileState("minimized");
+  setMobileVerticalState(true);
+
+  paneStageEl.style.setProperty("--stage-x", "0");
+  paneStageEl.style.setProperty("--stage-y", "calc(60dvh - 48px)");
+
+  if (options.hideInfoAfterTransition) {
+    if (mobileInfoHideTimer) {
+      clearTimeout(mobileInfoHideTimer);
+      mobileInfoHideTimer = null;
+    }
+    mobileInfoHideTimer = setTimeout(() => {
+      setInfoSidebarState("hidden");
+      setMobileInfoPaneVisibility(false);
+      mobileInfoHideTimer = null;
+    }, 400);
+  } else {
+    setInfoSidebarState("hidden");
+    setMobileInfoPaneVisibility(false);
+  }
+}
+
 function toggleMobileStageMinimized() {
   if (!isMobileView() || !paneStageEl) return false;
   paneStageEl.classList.toggle("is-minimized");
@@ -367,11 +393,12 @@ if (window.visualViewport) {
 syncResponsiveSidebarState();
 
 if (isMobileView()) {
-  setMobileInfoPaneVisibility(false);
-  setMobilePaneStage("list");
-  setMobileVerticalState(true);
-  setMapSidebarMobileState("minimized");
+  setMobileHomeState();
 }
+
+window.onload = () => {
+  if (isMobileView()) setMobileHomeState();
+};
 
 L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -566,16 +593,7 @@ function clearMapSelection(options = {}) {
   setActiveAreaItem(null, null);
 
   if (isMobileView()) {
-    if (mobileInfoHideTimer) {
-      clearTimeout(mobileInfoHideTimer);
-      mobileInfoHideTimer = null;
-    }
-
-    setMobilePaneStage("list");
-    setMapSidebarMobileState("minimized");
-    setMobileVerticalState(true);
-    setMobileInfoPaneVisibility(false);
-    setInfoSidebarState("hidden");
+    setMobileHomeState({ hideInfoAfterTransition: true });
   } else {
     window.closeInfoPanel();
   }
@@ -1089,20 +1107,7 @@ function openInfoPanel(latlng, features, options = {}) {
 
 window.closeInfoPanel = () => {
   if (isMobileView()) {
-    if (mobileInfoHideTimer) {
-      clearTimeout(mobileInfoHideTimer);
-      mobileInfoHideTimer = null;
-    }
-
-    setMobilePaneStage("list");
-    setMapSidebarMobileState("minimized");
-    setMobileVerticalState(true);
-
-    mobileInfoHideTimer = setTimeout(() => {
-      setInfoSidebarState("hidden");
-      setMobileInfoPaneVisibility(false);
-      mobileInfoHideTimer = null;
-    }, 420);
+    setMobileHomeState({ hideInfoAfterTransition: true });
     return;
   }
 

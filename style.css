@@ -317,7 +317,7 @@ body, html {
 
   .pane-stage {
     position: fixed;
-    bottom: max(env(safe-area-inset-bottom, 0px), var(--mobile-browser-bar-offset, 0px));
+    bottom: 0;
     left: 0;
     width: 200vw;
     height: 60dvh;
