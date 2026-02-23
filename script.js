@@ -95,6 +95,11 @@ function syncMobileBrowserInset() {
   paneStageEl.style.setProperty("--mobile-browser-bar-offset", `${overlayInset}px`);
 }
 
+function setMobileInfoPaneVisibility(isVisible) {
+  if (!infoSidebarEl || !isMobileView()) return;
+  infoSidebarEl.classList.toggle("mobile-hidden", !isVisible);
+}
+
 function setMobileVerticalState(isMinimized) {
   if (!isMobileView() || !paneStageEl) return;
   paneStageEl.classList.toggle("is-minimized", Boolean(isMinimized));
@@ -113,7 +118,13 @@ function setInfoSidebarState(state = "hidden") {
   infoSidebarEl.dataset.mobileState = nextState;
   infoSidebarEl.classList.toggle("active", state !== "hidden");
   infoSidebarEl.classList.toggle("is-active-pane", nextState === "open");
-  if (nextState === "open") setMobileVerticalState(false);
+
+  if (nextState === "open") {
+    setMobileInfoPaneVisibility(true);
+    setMobileVerticalState(false);
+  } else if (nextState === "hidden") {
+    setMobileInfoPaneVisibility(false);
+  }
 
   if (isMobileView()) updateInfoBannerTitle();
 }
@@ -267,7 +278,7 @@ function updateInfoBannerTitle() {
       setMobileVerticalState(false);
       setMapSidebarMobileState("open");
       setMobilePaneStage("list");
-      setTimeout(() => setInfoSidebarState("hidden"), 320);
+      setTimeout(() => setInfoSidebarState("hidden"), 420);
     },
     rightActionText: "✕",
     rightActionLabel: "Close Area Info",
@@ -327,6 +338,7 @@ function syncResponsiveSidebarState() {
       setMobilePaneStage("info");
     } else {
       setInfoSidebarState("hidden");
+      setMobileInfoPaneVisibility(false);
       setMobilePaneStage("list");
       setMobileVerticalState(listState !== "open");
     }
@@ -354,6 +366,7 @@ if (window.visualViewport) {
 syncResponsiveSidebarState();
 
 if (isMobileView()) {
+  setMobileInfoPaneVisibility(false);
   setMobilePaneStage("list");
   setMobileVerticalState(true);
 }
@@ -1040,6 +1053,7 @@ function openInfoPanel(latlng, features, options = {}) {
   updateInfoBannerTitle();
 
   if (isMobileView()) {
+    setMobileInfoPaneVisibility(true);
     setMapSidebarMobileState("open");
     setInfoSidebarState("open");
     setMobilePaneStage("info");
@@ -1061,7 +1075,7 @@ window.closeInfoPanel = () => {
   if (isMobileView()) {
     setMapSidebarMobileState("minimized");
     setMobilePaneStage("list");
-    setTimeout(() => setInfoSidebarState("hidden"), 320);
+    setTimeout(() => setInfoSidebarState("hidden"), 420);
     return;
   }
 

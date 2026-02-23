@@ -332,6 +332,10 @@ body, html {
     pointer-events: none;
   }
 
+  .pane-stage:not(.is-info-view) {
+    --stage-x: 0;
+  }
+
   .pane-stage.is-info-view {
     --stage-x: -100vw;
   }
@@ -373,6 +377,10 @@ body, html {
 
   .info-sidebar {
     z-index: 1;
+  }
+  .info-sidebar.mobile-hidden {
+    visibility: hidden;
+    pointer-events: none;
   }
   .info-sidebar .close-info-btn {
     top: 10px;
