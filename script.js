@@ -77,6 +77,24 @@ function setMobilePaneStage(stage = "list") {
   paneStageEl.classList.toggle("is-info-view", stage === "info");
 }
 
+function syncMobileBrowserInset() {
+  if (!paneStageEl) return;
+
+  if (!isMobileView()) {
+    paneStageEl.style.setProperty("--mobile-browser-bar-offset", "0px");
+    return;
+  }
+
+  const vv = window.visualViewport;
+  if (!vv) {
+    paneStageEl.style.setProperty("--mobile-browser-bar-offset", "0px");
+    return;
+  }
+
+  const overlayInset = Math.max(0, Math.round(window.innerHeight - (vv.height + vv.offsetTop)));
+  paneStageEl.style.setProperty("--mobile-browser-bar-offset", `${overlayInset}px`);
+}
+
 function setMobileVerticalState(isMinimized) {
   if (!isMobileView() || !paneStageEl) return;
   paneStageEl.classList.toggle("is-minimized", Boolean(isMinimized));
@@ -324,10 +342,15 @@ function syncResponsiveSidebarState() {
 
   syncSidebarToggleUI();
   syncLeafletControlPosition();
+  syncMobileBrowserInset();
 }
 
 mobileMediaQuery.addEventListener("change", syncResponsiveSidebarState);
 window.addEventListener("resize", syncResponsiveSidebarState);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", syncMobileBrowserInset);
+  window.visualViewport.addEventListener("scroll", syncMobileBrowserInset);
+}
 syncResponsiveSidebarState();
 
 if (isMobileView()) {
