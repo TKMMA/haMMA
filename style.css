@@ -326,8 +326,9 @@ body, html {
     padding-bottom: env(safe-area-inset-bottom);
     --stage-x: 0;
     --stage-y: 0;
-    transform: translateX(var(--stage-x)) translateY(var(--stage-y));
+    transform: translateX(var(--stage-x, 0)) translateY(var(--stage-y, 0));
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
     z-index: 1005;
     pointer-events: none;
   }
@@ -401,7 +402,8 @@ body, html {
 
   .sheet-banner {
     display: grid;
-    width: 100%;
+    width: 100vw;
+    box-sizing: border-box;
     pointer-events: auto;
     grid-template-columns: 80px 1fr 80px;
     align-items: center;

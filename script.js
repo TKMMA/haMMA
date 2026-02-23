@@ -369,6 +369,7 @@ if (isMobileView()) {
   setMobileInfoPaneVisibility(false);
   setMobilePaneStage("list");
   setMobileVerticalState(true);
+  setMapSidebarMobileState("minimized");
 }
 
 L.tileLayer(
@@ -563,6 +564,12 @@ function clearMapSelection(options = {}) {
   clearHoverHighlight();
   window.closeInfoPanel();
   setActiveAreaItem(null, null);
+
+  if (isMobileView()) {
+    setMobilePaneStage("list");
+    setMobileVerticalState(true);
+    setMobileInfoPaneVisibility(false);
+  }
 
   if (options.fromClick && hadSelection && hasEverSelected) {
     showInfoHint();
@@ -1073,8 +1080,9 @@ function openInfoPanel(latlng, features, options = {}) {
 
 window.closeInfoPanel = () => {
   if (isMobileView()) {
-    setMapSidebarMobileState("minimized");
     setMobilePaneStage("list");
+    setMobileVerticalState(true);
+    setMapSidebarMobileState("minimized");
     setTimeout(() => setInfoSidebarState("hidden"), 420);
     return;
   }
