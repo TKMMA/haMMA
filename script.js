@@ -110,11 +110,11 @@ function setMobileHomeState(options = {}) {
   if (!isMobileView() || !paneStageEl) return;
 
   setMobilePaneStage("list");
-  setMapSidebarMobileState("minimized");
-  setMobileVerticalState(true);
+  setMapSidebarMobileState("open");
+  setMobileVerticalState(false);
 
   paneStageEl.style.setProperty("--stage-x", "0");
-  paneStageEl.style.setProperty("--stage-y", "calc(60dvh - 48px)");
+  paneStageEl.style.setProperty("--stage-y", "0px");
 
   if (options.hideInfoAfterTransition) {
     if (mobileInfoHideTimer) {
@@ -359,7 +359,7 @@ function syncResponsiveSidebarState() {
   if (!mapSidebarEl) return;
 
   if (isMobileView()) {
-    const listState = mapSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
+    const listState = "open";
     setMapSidebarMobileState(listState);
 
     if (infoSidebarEl.classList.contains("active")) {
@@ -370,7 +370,7 @@ function syncResponsiveSidebarState() {
       setInfoSidebarState("hidden");
       setMobileInfoPaneVisibility(false);
       setMobilePaneStage("list");
-      setMobileVerticalState(listState !== "open");
+      setMobileVerticalState(false);
     }
 
     updateMapSidebarBanner();
@@ -596,8 +596,6 @@ function clearMapSelection(options = {}) {
   setActiveAreaItem(null, null);
 
   if (isMobileView()) {
-    paneStageEl?.classList.remove("is-info-view");
-    paneStageEl?.classList.add("is-minimized");
     setMobileHomeState({ hideInfoAfterTransition: true });
   } else {
     window.closeInfoPanel();
