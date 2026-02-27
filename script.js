@@ -147,6 +147,10 @@ function setInfoSidebarState(state = "hidden") {
   infoSidebarEl.classList.toggle("is-active-pane", nextState === "open");
 
   if (nextState === "open") {
+    if (mobileInfoHideTimer) {
+      clearTimeout(mobileInfoHideTimer);
+      mobileInfoHideTimer = null;
+    }
     setMobileInfoPaneVisibility(true);
     setMobileVerticalState(false);
   } else if (nextState === "hidden") {
@@ -359,10 +363,11 @@ function syncResponsiveSidebarState() {
   if (!mapSidebarEl) return;
 
   if (isMobileView()) {
-    const listState = "open";
+    const infoIsActive = infoSidebarEl.classList.contains("active");
+    const listState = infoIsActive ? "hidden-left" : "open";
     setMapSidebarMobileState(listState);
 
-    if (infoSidebarEl.classList.contains("active")) {
+    if (infoIsActive) {
       const infoState = infoSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
       setInfoSidebarState(infoState);
       setMobilePaneStage("info");
@@ -1093,7 +1098,7 @@ function openInfoPanel(latlng, features, options = {}) {
     paneStageEl?.classList.remove("is-minimized");
     paneStageEl?.classList.add("is-info-view");
     setMobileInfoPaneVisibility(true);
-    setMapSidebarMobileState("open");
+    setMapSidebarMobileState("hidden-left");
     setInfoSidebarState("open");
     setMobilePaneStage("info");
   } else {
