@@ -299,30 +299,21 @@ body, html {
 .island-list::-webkit-scrollbar-thumb, .info-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 
 @media (max-width: 768px) {
-  /* ... keep your brand-panel styles ... */
-
   .pane-stage {
     position: fixed;
     bottom: 0;
     left: 0;
-    width: 200vw; /* Allows List and Info to sit side-by-side */
+    width: 200vw; 
     height: 60dvh;
     display: flex;
-    padding-bottom: env(safe-area-inset-bottom);
     z-index: 1005;
     pointer-events: none;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Control position via JS variables */
     transform: translateX(var(--stage-x, 0)) translateY(var(--stage-y, 0));
   }
 
-  /* Transition states */
   .pane-stage.is-info-view {
-    --stage-x: -50%; /* Slides to show the second pane (Info) */
-  }
-
-  .pane-stage.is-minimized {
-    --stage-y: calc(100% - 48px); /* Slides down to just show the header */
+    --stage-x: -50%; 
   }
 
   .map-sidebar, .info-sidebar {
@@ -330,14 +321,12 @@ body, html {
     width: 100vw;
     height: 100%;
     flex: 0 0 100vw;
+    margin: 0;
     border-radius: 16px 16px 0 0;
     pointer-events: auto;
-    transform: none !important; /* Override desktop absolute positioning */
-  }
-  
-  /* Ensure info-sidebar is never physically hidden, just off-screen */
-  .info-sidebar.mobile-hidden {
-    display: flex !important; 
+    background: #fff;
+    transform: none !important;
+    display: flex !important;
     visibility: visible !important;
   }
 }
