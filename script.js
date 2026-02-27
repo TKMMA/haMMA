@@ -166,7 +166,7 @@ function setMapSidebarMobileState(state = "minimized") {
   mapSidebarEl.dataset.mobileState = state;
   mapSidebarEl.classList.toggle("collapsed", state !== "open");
   mapSidebarEl.classList.toggle("is-active-pane", state === "open");
-  setMobileVerticalState(state !== "open");
+  setMobileVerticalState(state === "minimized");
   updateMapSidebarBanner();
 }
 
@@ -368,8 +368,7 @@ function syncResponsiveSidebarState() {
     setMapSidebarMobileState(listState);
 
     if (infoIsActive) {
-      const infoState = infoSidebarEl.dataset.mobileState === "open" ? "open" : "minimized";
-      setInfoSidebarState(infoState);
+      setInfoSidebarState("open");
       setMobilePaneStage("info");
     } else {
       setInfoSidebarState("hidden");
