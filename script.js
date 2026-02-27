@@ -1,230 +1,102 @@
-const allIslandLayers = {};
-const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
-const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
+const SERVICE_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
+const islandOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
+const allLayers = {};
+let activeMarker = null;
 
-let activeSelectionMarker = null;
-let activeAccordionLayer = null;
-let activeHoverLayer = null;
-let hasEverSelected = false;
-let activeAreaSelection = null;
-let mobileInfoHideTimer = null;
+const paneStage = document.getElementById("pane-stage");
+const isMobile = () => window.innerWidth <= 768;
 
-// Cache DOM elements
-const paneStageEl = document.getElementById("pane-stage");
-const mapSidebarEl = document.getElementById("map-sidebar");
-const infoSidebarEl = document.getElementById("info-sidebar");
-const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
+// HELPER: Case-insensitive attribute finder to stop "undefined"
+const getAttr = (props, key) => {
+    const found = Object.keys(props).find(k => k.toLowerCase() === key.toLowerCase());
+    return found ? props[found] : null;
+};
 
-const isMobileView = () => mobileMediaQuery.matches;
+/** --- MAP SETUP --- **/
+const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}').addTo(map);
 
-/**
- * --- APP STATE CONTROLLER ---
- */
-function setMobileAppView(view) {
-    if (!isMobileView() || !paneStageEl) return;
-
-    if (view === 'info') {
-        paneStageEl.classList.remove("is-minimized");
-        paneStageEl.classList.add("is-info-view");
-        setInfoSidebarState("open");
-        setMapSidebarMobileState("hidden-left");
-    } else if (view === 'list') {
-        paneStageEl.classList.remove("is-minimized", "is-info-view");
-        setMapSidebarMobileState("open");
-        setTimeout(() => setInfoSidebarState("hidden"), 350);
-    } else if (view === 'minimized') {
-        paneStageEl.classList.add("is-minimized");
-        setMapSidebarMobileState("minimized");
-    }
-}
-
-function setInfoSidebarState(state = "hidden") {
-    if (!infoSidebarEl) return;
-    infoSidebarEl.dataset.mobileState = state;
-    infoSidebarEl.classList.toggle("active", state !== "hidden");
-    if (isMobileView()) updateInfoBannerTitle();
-}
-
-function setMapSidebarMobileState(state = "open") {
-    if (!mapSidebarEl || !isMobileView()) return;
-    mapSidebarEl.dataset.mobileState = state;
-    mapSidebarEl.classList.toggle("collapsed", state !== "open");
-    updateMapSidebarBanner();
-}
-
-/**
- * --- MAP INITIALIZATION ---
- */
-const map = L.map("map", { zoomControl: false, attributionControl: false }).setView([20.4, -157.4], 7);
-
-// ADDING TILES (The missing piece!)
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 13
-}).addTo(map);
-
-const zoomControl = L.control.zoom({ position: isMobileView() ? "bottomright" : "topright" }).addTo(map);
-
-function syncLeafletControlPosition() {
-    const targetPosition = isMobileView() ? "bottomright" : "topright";
-    if (zoomControl.options.position === targetPosition) return;
-    map.removeControl(zoomControl);
-    zoomControl.setPosition(targetPosition);
-    zoomControl.addTo(map);
-}
-
-/**
- * --- DATA FETCHING ---
- */
-async function fetchIslandData() {
+/** --- DATA LOADING --- **/
+async function init() {
     try {
-        const response = await fetch(`${SERVICE_LAYER_URL}/query?where=1%3D1&outFields=*&f=geojson`);
-        const data = await response.json();
-        
-        // Group features by Island
+        const res = await fetch(`${SERVICE_URL}/query?where=1%3D1&outFields=*&f=geojson`);
+        const data = await res.json();
         const grouped = {};
+
         data.features.forEach(f => {
-            const island = f.properties.Island || "Other";
-            if (!grouped[island]) grouped[island] = [];
-            grouped[island].push(f);
+            const isl = getAttr(f.properties, "Island") || "Other";
+            if (!grouped[isl]) grouped[isl] = [];
+            grouped[isl].push(f);
         });
 
-        const listContainer = document.getElementById("island-list");
-        listContainer.innerHTML = "";
-
-        islandDisplayOrder.forEach(island => {
-            if (grouped[island]) {
-                const islandLayer = L.geoJSON(grouped[island], {
-                    style: { color: "#005a87", weight: 2, fillOpacity: 0.2 },
-                    onEachFeature: (feature, layer) => {
-                        layer.on('click', (e) => {
-                            L.DomEvent.stopPropagation(e);
-                            openInfoPanel(e.latlng, [feature], { source: 'map' });
-                        });
-                    }
+        const list = document.getElementById("island-list");
+        islandOrder.forEach(name => {
+            if (grouped[name]) {
+                const layer = L.geoJSON(grouped[name], {
+                    style: (feat) => ({ color: getAttr(feat.properties, "FillColor") || "#005a87", weight: 2, fillOpacity: 0.4 }),
+                    onEachFeature: (f, l) => l.on('click', (e) => { L.DomEvent.stopPropagation(e); showInfo(f.properties, e.latlng); })
                 }).addTo(map);
+                allLayers[name] = layer;
                 
-                allIslandLayers[island] = islandLayer;
-                renderIslandUI(island, grouped[island]);
+                const div = document.createElement("div");
+                div.innerHTML = `
+                    <div class="island-header" onclick="this.nextElementSibling.classList.toggle('is-open')">
+                        <span>${name}</span><span>▼</span>
+                    </div>
+                    <div class="island-areas">
+                        ${grouped[name].map(f => `<div class="area-item" onclick="focusArea('${name}','${getAttr(f.properties, 'Area_Name')}')">${getAttr(f.properties, "Area_Name")}</div>`).join('')}
+                    </div>`;
+                list.appendChild(div);
             }
         });
-    } catch (err) {
-        console.error("Error loading map data:", err);
-    }
+        updateBanners();
+    } catch (e) { console.error(e); }
 }
 
-function renderIslandUI(islandName, features) {
-    const container = document.getElementById("island-list");
-    const section = document.createElement("div");
-    section.className = "island-section";
-    section.innerHTML = `
-        <div class="island-header" onclick="this.nextElementSibling.classList.toggle('hidden')">
-            <strong>${islandName}</strong>
-            <span>▼</span>
-        </div>
-        <div class="island-areas">
-            ${features.map(f => `
-                <div class="area-item" onclick="selectAreaFromList('${islandName}', '${f.properties.Area_Name}')">
-                    ${f.properties.Area_Name}
-                </div>
-            `).join('')}
-        </div>
-    `;
-    container.appendChild(section);
-}
-
-window.selectAreaFromList = (island, areaName) => {
-    const layer = allIslandLayers[island].getLayers().find(l => l.feature.properties.Area_Name === areaName);
-    if (layer) {
-        const bounds = layer.getBounds();
-        map.fitBounds(bounds, { padding: [50, 50] });
-        openInfoPanel(bounds.getCenter(), [layer.feature], { source: 'list' });
+window.focusArea = (island, area) => {
+    const l = allLayers[island].getLayers().find(x => getAttr(x.feature.properties, "Area_Name") === area);
+    if (l) {
+        map.fitBounds(l.getBounds(), { padding: [100, 100] });
+        showInfo(l.feature.properties, l.getBounds().getCenter());
     }
 };
 
-/**
- * --- PANEL LOGIC ---
- */
-function openInfoPanel(latlng, features, options = {}) {
-    const content = document.getElementById("info-content");
-    const f = features[0].properties;
+/** --- PANEL LOGIC --- **/
+function showInfo(props, latlng) {
+    const title = getAttr(props, "Area_Name") || "Details";
+    const rules = getAttr(props, "Fishing_Rules_Summary") || "No summary available.";
     
-    content.innerHTML = `
-        <div class="mmpopup">
-            <h3>${f.Area_Name}</h3>
-            <p><strong>Island:</strong> ${f.Island}</p>
-            <hr>
-            <div class="info-body">
-                <p>${f.Description || "No description available."}</p>
-            </div>
+    document.getElementById("info-content").innerHTML = `
+        <div style="padding:20px; background:#fff; border-bottom:1px solid #eee;">
+            <h3 style="margin:0;">${title}</h3>
+            <small>Island: ${getAttr(props, "Island")}</small>
         </div>
-    `;
-    content.scrollTop = 0;
+        <div class="info-card">
+            <h4>Fishing Rules</h4>
+            <div style="font-size:13px; line-height:1.6;">${rules.replace(/\n/g, '<br>• ')}</div>
+        </div>`;
 
-    if (isMobileView()) {
-        setMobileAppView('info');
-    } else {
-        setInfoSidebarState("active");
-    }
+    if (isMobile()) paneStage.classList.add("is-info-view");
+    else document.getElementById("info-sidebar").classList.add("active");
 
-    if (latlng) updateClickMarker(latlng);
-}
-
-function updateClickMarker(latlng) {
-    if (activeSelectionMarker) map.removeLayer(activeSelectionMarker);
-    activeSelectionMarker = L.marker(latlng).addTo(map);
-}
-
-/**
- * --- UI BANNERS ---
- */
-function updateMapSidebarBanner() {
-    if (!isMobileView()) return;
-    ensureSidebarBanner(mapSidebarEl, {
-        title: "Island Areas",
-        actionText: paneStageEl.classList.contains('is-minimized') ? "EXPAND" : "MINIMIZE",
-        actionFn: () => {
-            const isMin = paneStageEl.classList.contains('is-minimized');
-            setMobileAppView(isMin ? 'list' : 'minimized');
-        }
-    });
-}
-
-function updateInfoBannerTitle() {
-    if (!isMobileView()) return;
-    ensureSidebarBanner(infoSidebarEl, {
-        title: "Area Details",
-        actionText: "BACK",
-        actionFn: () => setMobileAppView('list')
-    });
-}
-
-function ensureSidebarBanner(sidebarEl, options) {
-    let banner = sidebarEl.querySelector(".sheet-banner");
-    if (!banner) {
-        banner = document.createElement("div");
-        banner.className = "sheet-banner";
-        sidebarEl.prepend(banner);
-    }
-    banner.innerHTML = `
-        <button class="sheet-banner-action" onclick="(${options.actionFn.toString()})()">${options.actionText}</button>
-        <div class="sheet-banner-title">${options.title}</div>
-        <div style="width:60px"></div>
-    `;
-}
-
-// Initial Sync
-function syncResponsiveSidebarState() {
-    syncLeafletControlPosition();
-    if (isMobileView()) {
-        setMobileAppView('list');
-    } else {
-        if (paneStageEl) paneStageEl.classList.remove("is-info-view", "is-minimized");
-        setMapSidebarMobileState("open");
+    if (latlng) {
+        if (activeMarker) map.removeLayer(activeMarker);
+        activeMarker = L.marker(latlng).addTo(map);
     }
 }
 
-window.addEventListener("resize", syncResponsiveSidebarState);
-document.addEventListener("DOMContentLoaded", () => {
-    syncResponsiveSidebarState();
-    fetchIslandData(); // Start the data fetch
-});
+function updateBanners() {
+    if (!isMobile()) return;
+    const create = (el, title, btn, fn) => {
+        let b = el.querySelector(".sheet-banner") || document.createElement("div");
+        b.className = "sheet-banner";
+        b.innerHTML = `<button onclick="${fn}">${btn}</button><strong>${title}</strong><div style="width:50px"></div>`;
+        if (!el.querySelector(".sheet-banner")) el.prepend(b);
+    };
+    create(document.getElementById("map-sidebar"), "Areas", "HIDE", "document.getElementById('pane-stage').classList.add('is-minimized')");
+    create(document.getElementById("info-sidebar"), "Details", "BACK", "document.getElementById('pane-stage').classList.remove('is-info-view')");
+}
+
+document.addEventListener("DOMContentLoaded", init);
+window.addEventListener("resize", updateBanners);
