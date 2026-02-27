@@ -1,66 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Hawaii Regulated Areas Map</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hawaii Regulated Areas Map</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-    <div class="map-interface">
-        <div id="map"></div>
-
-        <div class="brand-panel">
-            <div class="brand-header">
-                <div class="brand-side-label">Division of Aquatic Resources</div>
-                <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
-                
-                <div class="brand-title-block">
-                    <h2 class="brand-title-main">Managed Areas</h2>
-                    <div class="brand-title-sub">Marine and Freshwater</div>
-                </div>
-
-                <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
-                <div class="brand-side-label">State of Hawaiʻi</div>
-            </div>
+  <div class="map-interface">
+    <div class="brand-panel">
+      <div class="brand-header">
+        <div class="brand-side-label">Division of Aquatic Resources</div>
+        <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
+        <div class="brand-title-block">
+          <h2 class="brand-title-main">Managed Areas</h2>
+          <div class="brand-title-sub">Marine and Freshwater</div>
         </div>
+        <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
+        <div class="brand-side-label">State of Hawaiʻi</div>
+      </div>
 
-        <div class="pane-stage" id="pane-stage">
-            
-            <aside id="map-sidebar" class="map-sidebar">
-                <div class="sidebar-search-wrap">
-                    <div class="search-input-wrapper">
-                        <input 
-                            type="text" 
-                            id="area-search" 
-                            placeholder="Search areas..." 
-                            onkeyup="filterSidebar()" 
-                            autocomplete="off"
-                        />
-                        <span class="search-icon">🔍</span>
-                    </div>
-                </div>
-                <div class="island-list" id="island-list">
-                    </div>
-            </aside>
-
-            <aside id="info-sidebar" class="info-sidebar mobile-hidden">
-                <button class="close-info-btn" onclick="closeInfoPanel()" aria-label="Close information">✕</button>
-                <div id="info-content" class="info-content">
-                    </div>
-            </aside>
-
-        </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+    <div class="pane-stage is-minimized" id="pane-stage">
+      <aside id="map-sidebar" class="map-sidebar">
+        <div class="sidebar-search-wrap">
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              id="area-search"
+              placeholder="Search areas..."
+              onkeyup="filterSidebar()"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span class="search-icon" aria-hidden="true">🔍</span>
+          </div>
+        </div>
+
+        <div id="island-list" class="island-list">
+          <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
+        </div>
+      </aside>
+
+      <aside id="info-sidebar" class="info-sidebar">
+        <button onclick="clearMapSelection()" class="close-info-btn" title="Close Area Info" aria-label="Close Area Info" type="button">✕</button>
+        <div id="info-content" class="info-content"></div>
+      </aside>
+    </div>
+
+    <div class="sidebar-toggle-rail">
+      <button
+        id="sidebar-toggle"
+        class="sidebar-edge-toggle"
+        onclick="toggleSidebar()"
+        aria-controls="map-sidebar"
+        aria-label="Collapse Areas List"
+        title="Collapse Areas List"
+        type="button"
+      >◀</button>
+    </div>
+
+    <div id="map"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
