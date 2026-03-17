@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Hawaii Regulated Areas Map</title>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="map-interface">
-    <header class="brand-panel" id="brand-panel">
+    <div class="brand-panel" id="brand-panel">
       <div class="brand-header">
         <div class="brand-side-label">Division of Aquatic Resources</div>
         <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
@@ -20,7 +21,7 @@
         <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
         <div class="brand-side-label">State of Hawaiʻi</div>
       </div>
-    </header>
+    </div>
 
     <div class="pane-stage is-minimized" id="pane-stage">
       <aside id="map-sidebar" class="map-sidebar" role="complementary" aria-label="Areas List">
@@ -40,7 +41,7 @@
         </div>
 
         <div id="island-list" class="island-list">
-          <div id="status-message" class="loading-notice">Loading Marine Areas...</div>
+          <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
         </div>
       </aside>
 
@@ -57,6 +58,7 @@
         onclick="toggleSidebar()"
         aria-controls="map-sidebar"
         aria-label="Collapse Areas List"
+        title="Collapse Areas List"
         type="button"
       >◀</button>
     </div>
