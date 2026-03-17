@@ -10,7 +10,7 @@
 </head>
 <body>
   <div class="map-interface">
-    <div class="brand-panel">
+    <div class="brand-panel" id="brand-panel">
       <div class="brand-header">
         <div class="brand-side-label">Division of Aquatic Resources</div>
         <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
@@ -21,11 +21,10 @@
         <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
         <div class="brand-side-label">State of Hawaiʻi</div>
       </div>
-
     </div>
 
     <div class="pane-stage is-minimized" id="pane-stage">
-      <aside id="map-sidebar" class="map-sidebar">
+      <aside id="map-sidebar" class="map-sidebar" role="complementary" aria-label="Areas List">
         <div class="sidebar-search-wrap">
           <div class="search-input-wrapper">
             <input
@@ -35,20 +34,32 @@
               onkeyup="filterSidebar()"
               autocomplete="off"
               spellcheck="false"
+              aria-label="Search through marine areas"
             />
             <span class="search-icon" aria-hidden="true">🔍</span>
           </div>
         </div>
 
         <div id="island-list" class="island-list">
-          <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
+          <div id="status-message" class="loading-notice">Loading Marine Areas...</div>
         </div>
       </aside>
 
-      <aside id="info-sidebar" class="info-sidebar">
+      <aside id="info-sidebar" class="info-sidebar" role="region" aria-label="Area Details">
         <button onclick="clearMapSelection()" class="close-info-btn" title="Close Area Info" aria-label="Close Area Info" type="button">✕</button>
         <div id="info-content" class="info-content"></div>
       </aside>
+    </div>
+
+    <div class="sidebar-toggle-rail">
+      <button
+        id="sidebar-toggle"
+        class="sidebar-edge-toggle"
+        onclick="toggleSidebar()"
+        aria-controls="map-sidebar"
+        aria-label="Collapse Areas List"
+        type="button"
+      >◀</button>
     </div>
 
     <div id="map"></div>
