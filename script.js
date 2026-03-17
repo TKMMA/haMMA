@@ -23,6 +23,33 @@ window.showTab = function (btn, tabId) {
   btn.classList.add("active");
 };
 
+
+
+document.addEventListener("click", (event) => {
+  const nextBtn = event.target.closest(".mmcard__image-next");
+  if (!nextBtn) return;
+
+  const wrap = nextBtn.closest(".mmcard__image-wrap");
+  const img = wrap?.querySelector(".mmcard__image");
+  if (!wrap || !img) return;
+
+  const encodedImages = (nextBtn.dataset.images || "").split("|").filter(Boolean);
+  if (encodedImages.length < 2) return;
+
+  const urls = encodedImages.map((value) => decodeURIComponent(value));
+  const currentIndex = Number(wrap.dataset.carouselIndex || 0);
+  const nextIndex = (currentIndex + 1) % urls.length;
+  wrap.dataset.carouselIndex = String(nextIndex);
+  img.src = urls[nextIndex];
+});
+window.toggleSummaryAccordion = function (btn) {
+  const panel = btn?.closest(".summary-accordion");
+  if (!panel) return;
+  panel.classList.toggle("expanded");
+  const expanded = panel.classList.contains("expanded");
+  btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+};
+
 const getVal = (props, key) => {
   const foundKey = Object.keys(props).find((k) => k.toLowerCase() === key.toLowerCase());
   const val = foundKey ? props[foundKey] : null;
@@ -66,7 +93,6 @@ const normalizeHawaiianText = (str) => {
 };
 
 const mapSidebarEl = document.getElementById("map-sidebar");
-const sidebarToggleEl = document.getElementById("sidebar-toggle");
 const infoSidebarEl = document.getElementById("info-sidebar");
 const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
 const mapInterfaceEl = document.querySelector(".map-interface");
@@ -167,9 +193,9 @@ function setMapSidebarMobileState(state = "minimized") {
   updateMapSidebarBanner();
 }
 
-function setMapSidebarDesktopState(state = "open") {
+function setMapSidebarDesktopState() {
   if (!mapSidebarEl || isMobileView()) return;
-  mapSidebarEl.classList.toggle("collapsed", state === "closed");
+  mapSidebarEl.classList.remove("collapsed");
 }
 
 function setActiveAreaItem(islandName, areaName) {
@@ -321,25 +347,15 @@ function updateInfoBannerTitle() {
 }
 
 const syncSidebarToggleUI = () => {
-  if (!mapSidebarEl || !sidebarToggleEl) return;
-  const collapsed = mapSidebarEl.classList.contains("collapsed");
-  sidebarToggleEl.textContent = collapsed ? "▶" : "◀";
-  sidebarToggleEl.title = collapsed ? "Show Areas List" : "Collapse Areas List";
-  sidebarToggleEl.setAttribute("aria-label", collapsed ? "Show Areas List" : "Collapse Areas List");
-  if (mapInterfaceEl) mapInterfaceEl.classList.toggle("sidebar-collapsed", collapsed);
+  if (!mapInterfaceEl || !mapSidebarEl) return;
+  mapInterfaceEl.classList.remove("sidebar-collapsed");
+  mapSidebarEl.classList.remove("collapsed");
 };
 
 window.toggleSidebar = () => {
-  if (!mapSidebarEl) return;
-
-  if (isMobileView()) {
-    const currentState = mapSidebarEl.dataset.mobileState || "minimized";
-    setMapSidebarMobileState(currentState === "open" ? "minimized" : "open");
-    return;
-  }
-
-  mapSidebarEl.classList.toggle("collapsed");
-  syncSidebarToggleUI();
+  if (!mapSidebarEl || !isMobileView()) return;
+  const currentState = mapSidebarEl.dataset.mobileState || "minimized";
+  setMapSidebarMobileState(currentState === "open" ? "minimized" : "open");
 };
 
 syncSidebarToggleUI();
@@ -1012,28 +1028,36 @@ function openInfoPanel(latlng, features, options = {}) {
     };
 
     summaryCardHtml = `
-      <div class="area-section mmcard mmcard--summary">
-        <div class="mmcard__body">
-          <h3 class="mmcard__title">Fishing Rules Summary</h3>
+      <div class="summary-accordion">
+        <button class="summary-accordion__toggle" type="button" onclick="toggleSummaryAccordion(this)" aria-expanded="false">
+          <span class="summary-accordion__label">See CONSOLIDATED FISHING RULES SUMMARY at this location</span>
+          <span class="summary-accordion__chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="summary-accordion__panel">
+          <div class="area-section mmcard mmcard--summary">
+            <div class="mmcard__body">
+              <h3 class="mmcard__title">Fishing Rules Summary</h3>
 
-          <span class="mmcard__subtitle-label">Managed Areas at this Location:</span>
-          <div class="mmcard__subtitle">${areaNamesHtml}</div>
+              <span class="mmcard__subtitle-label">Managed Areas at this Location:</span>
+              <div class="mmcard__subtitle">${areaNamesHtml}</div>
 
-          <div class="mm-statewide-notice">
-            The site-specific rules below apply in addition to all
-            <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>.
-          </div>
+              <div class="mm-statewide-notice">
+                The site-specific rules below apply in addition to all
+                <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>.
+              </div>
 
-          <div class="mmtabs">
-            <button class="active" type="button">CONSOLIDATED RULES</button>
-          </div>
+              <div class="mmtabs">
+                <button class="active" type="button">CONSOLIDATED RULES</button>
+              </div>
 
-          <div class="tab-pane">
-            ${buildSummaryBlock("Gear Restrictions", "Rules_Gear")}
-            ${buildSummaryBlock("Species & Bag Limits", "Rules_Species_Size_Bag")}
-            ${buildSummaryBlock("Prohibited Activities", "Rules_Activities")}
-            ${buildSummaryBlock("Seasons & Times Rules", "Rules_Seasons_Times")}
-            ${buildSummaryBlock("Transit & Anchor Rules", "Rules_Transit_Anchor")}
+              <div class="tab-pane">
+                ${buildSummaryBlock("Gear Restrictions", "Rules_Gear")}
+                ${buildSummaryBlock("Species & Bag Limits", "Rules_Species_Size_Bag")}
+                ${buildSummaryBlock("Prohibited Activities", "Rules_Activities")}
+                ${buildSummaryBlock("Seasons & Times Rules", "Rules_Seasons_Times")}
+                ${buildSummaryBlock("Transit & Anchor Rules", "Rules_Transit_Anchor")}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1047,7 +1071,11 @@ function openInfoPanel(latlng, features, options = {}) {
       const props = feature.properties;
       const uid = `area-${index}`;
       const name = getVal(props, "Full_name") || getVal(props, "Full_Name") || "Unknown Area";
-      const img = getVal(props, "Area_Image_URL_1") || getVal(props, "Area_Image_URL_2") || getVal(props, "Area_Image_URL_3");
+      const images = [
+        getVal(props, "Area_Image_URL_1"),
+        getVal(props, "Area_Image_URL_2"),
+        getVal(props, "Area_Image_URL_3")
+      ].filter(Boolean);
       const stateUrl = getVal(props, "State_Fishing_Regs_URL") || "https://dlnr.hawaii.gov/dar/fishing/fishing-regulations/";
 
       const renderFieldIndented = (alias, value, isBullet = false, isDate = false) => {
@@ -1061,17 +1089,20 @@ function openInfoPanel(latlng, features, options = {}) {
 
       return `
         <div class="area-section mmcard">
-          ${img ? `<img style="width:100%; aspect-ratio:16/9; object-fit:cover; display:block;" src="${img}">` : ""}
+          ${images.length ? `<div class="mmcard__image-wrap" data-carousel-index="0">
+            <img class="mmcard__image" src="${images[0]}" alt="${name}">
+            ${images.length > 1 ? `<button class="mmcard__image-next" type="button" aria-label="Next image" data-images="${images.map((url) => encodeURIComponent(url)).join("|")}">›</button>` : ""}
+          </div>` : ""}
           <div class="mmcard__body">
             <h3 class="mmcard__title">${name}</h3>
 
             <div class="mmtabs">
-              <button class="active" type="button" onclick="showTab(this,'about-${uid}')">ABOUT</button>
-              <button type="button" onclick="showTab(this,'rules-${uid}')">RULES</button>
+              <button type="button" onclick="showTab(this,'about-${uid}')">ABOUT</button>
+              <button class="active" type="button" onclick="showTab(this,'rules-${uid}')">RULES</button>
               <button type="button" onclick="showTab(this,'laws-${uid}')">LAWS</button>
             </div>
 
-            <div id="about-${uid}" class="tab-pane" style="display:block;">
+            <div id="about-${uid}" class="tab-pane" style="display:none;">
               ${renderFieldIndented("Designation", joinFields(props, "Designation_1", "Designation_2", "Designation_3"))}
               ${renderFieldIndented("Island", getVal(props, "Island"))}
               ${renderFieldIndented("Purpose", getVal(props, "Purpose"), true)}
@@ -1082,7 +1113,7 @@ function openInfoPanel(latlng, features, options = {}) {
               ${getVal(props, "DAR_URL") ? `<a class="reg-link" href="${getVal(props, "DAR_URL")}" target="_blank">OFFICIAL DAR PAGE ›</a>` : ""}
             </div>
 
-            <div id="rules-${uid}" class="tab-pane" style="display:none;">
+            <div id="rules-${uid}" class="tab-pane" style="display:block;">
               <div class="mm-statewide-notice">
                 The site-specific rules below apply in addition to all
                 <a href="${stateUrl}" target="_blank">Statewide Fishing Regulations</a>.
