@@ -85,8 +85,7 @@ body, html {
   text-align: center;
   line-height: 1.2;
 }
-.brand-header .brand-side-label:first-child { justify-self: end; }
-.brand-header .brand-side-label:last-child { justify-self: start; }
+.brand-header .brand-side-label { flex: 1 1 0; }
 
 .brand-logo { width: 42px; height: 42px; object-fit: contain; transition: width 0.3s, height 0.3s; }
 .brand-title-block { display: flex; flex-direction: column; align-items: center; justify-self: center; }
