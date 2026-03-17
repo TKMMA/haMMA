@@ -42,6 +42,14 @@ document.addEventListener("click", (event) => {
   wrap.dataset.carouselIndex = String(nextIndex);
   img.src = urls[nextIndex];
 });
+window.toggleSummaryAccordion = function (btn) {
+  const panel = btn?.closest(".summary-accordion");
+  if (!panel) return;
+  panel.classList.toggle("expanded");
+  const expanded = panel.classList.contains("expanded");
+  btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+};
+
 const getVal = (props, key) => {
   const foundKey = Object.keys(props).find((k) => k.toLowerCase() === key.toLowerCase());
   const val = foundKey ? props[foundKey] : null;
@@ -1020,28 +1028,36 @@ function openInfoPanel(latlng, features, options = {}) {
     };
 
     summaryCardHtml = `
-      <div class="area-section mmcard mmcard--summary">
-        <div class="mmcard__body">
-          <h3 class="mmcard__title">Fishing Rules Summary</h3>
+      <div class="summary-accordion">
+        <button class="summary-accordion__toggle" type="button" onclick="toggleSummaryAccordion(this)" aria-expanded="false">
+          <span class="summary-accordion__label">See CONSOLIDATED FISHING RULES SUMMARY at this location</span>
+          <span class="summary-accordion__chevron" aria-hidden="true">▼</span>
+        </button>
+        <div class="summary-accordion__panel">
+          <div class="area-section mmcard mmcard--summary">
+            <div class="mmcard__body">
+              <h3 class="mmcard__title">Fishing Rules Summary</h3>
 
-          <span class="mmcard__subtitle-label">Managed Areas at this Location:</span>
-          <div class="mmcard__subtitle">${areaNamesHtml}</div>
+              <span class="mmcard__subtitle-label">Managed Areas at this Location:</span>
+              <div class="mmcard__subtitle">${areaNamesHtml}</div>
 
-          <div class="mm-statewide-notice">
-            The site-specific rules below apply in addition to all
-            <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>.
-          </div>
+              <div class="mm-statewide-notice">
+                The site-specific rules below apply in addition to all
+                <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>.
+              </div>
 
-          <div class="mmtabs">
-            <button class="active" type="button">CONSOLIDATED RULES</button>
-          </div>
+              <div class="mmtabs">
+                <button class="active" type="button">CONSOLIDATED RULES</button>
+              </div>
 
-          <div class="tab-pane">
-            ${buildSummaryBlock("Gear Restrictions", "Rules_Gear")}
-            ${buildSummaryBlock("Species & Bag Limits", "Rules_Species_Size_Bag")}
-            ${buildSummaryBlock("Prohibited Activities", "Rules_Activities")}
-            ${buildSummaryBlock("Seasons & Times Rules", "Rules_Seasons_Times")}
-            ${buildSummaryBlock("Transit & Anchor Rules", "Rules_Transit_Anchor")}
+              <div class="tab-pane">
+                ${buildSummaryBlock("Gear Restrictions", "Rules_Gear")}
+                ${buildSummaryBlock("Species & Bag Limits", "Rules_Species_Size_Bag")}
+                ${buildSummaryBlock("Prohibited Activities", "Rules_Activities")}
+                ${buildSummaryBlock("Seasons & Times Rules", "Rules_Seasons_Times")}
+                ${buildSummaryBlock("Transit & Anchor Rules", "Rules_Transit_Anchor")}
+              </div>
+            </div>
           </div>
         </div>
       </div>
