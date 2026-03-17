@@ -65,10 +65,8 @@ const normalizeHawaiianText = (str) => {
 };
 
 const mapSidebarEl = document.getElementById("map-sidebar");
-const sidebarToggleEl = document.getElementById("sidebar-toggle");
 const infoSidebarEl = document.getElementById("info-sidebar");
 const mobileMediaQuery = window.matchMedia("(max-width: 768px)");
-const mapInterfaceEl = document.querySelector(".map-interface");
 const paneStageEl = document.getElementById("pane-stage");
 
 const isMobileView = () => mobileMediaQuery.matches;
@@ -166,11 +164,6 @@ function setMapSidebarMobileState(state = "minimized") {
   updateMapSidebarBanner();
 }
 
-function setMapSidebarDesktopState(state = "open") {
-  if (!mapSidebarEl || isMobileView()) return;
-
-  mapSidebarEl.classList.toggle("collapsed", state === "closed");
-}
 
 function setActiveAreaItem(islandName, areaName) {
   activeAreaSelection = islandName && areaName ? { islandName, areaName } : null;
@@ -320,29 +313,6 @@ function updateInfoBannerTitle() {
   });
 }
 
-const syncSidebarToggleUI = () => {
-  if (!mapSidebarEl || !sidebarToggleEl) return;
-  const collapsed = mapSidebarEl.classList.contains("collapsed");
-  sidebarToggleEl.textContent = collapsed ? "▶" : "◀";
-  sidebarToggleEl.title = collapsed ? "Show Areas List" : "Collapse Areas List";
-  sidebarToggleEl.setAttribute("aria-label", collapsed ? "Show Areas List" : "Collapse Areas List");
-  if (mapInterfaceEl) mapInterfaceEl.classList.toggle("sidebar-collapsed", collapsed);
-};
-
-window.toggleSidebar = () => {
-  if (!mapSidebarEl) return;
-
-  if (isMobileView()) {
-    const currentState = mapSidebarEl.dataset.mobileState || "minimized";
-    setMapSidebarMobileState(currentState === "open" ? "minimized" : "open");
-    return;
-  }
-
-  mapSidebarEl.classList.toggle("collapsed");
-  syncSidebarToggleUI();
-};
-
-syncSidebarToggleUI();
 
 const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
 const zoomControl = L.control.zoom({ position: isMobileView() ? "bottomright" : "topright" }).addTo(map);
@@ -379,10 +349,8 @@ function syncResponsiveSidebarState() {
     if (paneStageEl) paneStageEl.classList.remove("is-info-view", "is-minimized");
     mapSidebarEl.dataset.mobileState = "desktop";
     infoSidebarEl.dataset.mobileState = infoSidebarEl.classList.contains("active") ? "expanded" : "hidden";
-    setMapSidebarDesktopState("open");
   }
 
-  syncSidebarToggleUI();
   syncLeafletControlPosition();
   syncMobileBrowserInset();
 }
@@ -734,7 +702,7 @@ function populateSidebar(islandName, features) {
   group.className = "island-group";
 
   const header = document.createElement("div");
-  header.className = "island-header";
+  header.className = `island-header${isMobileView() ? "" : " expanded"}`;
   header.id = `header-${islandId}`;
   header.addEventListener("click", () => window.toggleIsland(islandId));
 
@@ -761,7 +729,7 @@ function populateSidebar(islandName, features) {
 
   const list = document.createElement("div");
   list.id = `list-${islandId}`;
-  list.className = "area-list";
+  list.className = `area-list${isMobileView() ? "" : " active"}`;
 
   const names = features
     .map((f) => getVal(f.properties, "Full_Name") || getVal(f.properties, "Full_name") || "Unknown")
@@ -790,7 +758,7 @@ window.toggleIsland = (id) => {
   const header = document.getElementById(`header-${id}`);
   if (!list || !header) return;
 
-  const shouldOpen = !list.classList.contains("active");
+  const shouldOpen = isMobileView() ? !list.classList.contains("active") : true;
 
   if (isMobileView()) {
     document.querySelectorAll(".area-list.active").forEach((openList) => {
@@ -930,10 +898,31 @@ window.filterSidebar = () => {
       group.style.display = "none";
     } else {
       group.style.display = "block";
-      list?.classList.remove("active");
-      header?.classList.remove("expanded");
+      list?.classList.toggle("active", !isMobileView());
+      header?.classList.toggle("expanded", !isMobileView());
     }
   });
+};
+
+
+function getAreaImages(props) {
+  return ["Area_Image_URL_1", "Area_Image_URL_2", "Area_Image_URL_3"]
+    .map((key) => getVal(props, key))
+    .filter(Boolean);
+}
+
+window.cycleAreaImage = function(button, direction = 1) {
+  const media = button?.closest(".mmcard__media");
+  if (!media) return;
+
+  const imageEl = media.querySelector(".mmcard__image");
+  const images = (media.dataset.images || "").split("|").filter(Boolean);
+  if (!imageEl || images.length < 2) return;
+
+  const currentIndex = Number(media.dataset.index || 0);
+  const nextIndex = (currentIndex + direction + images.length) % images.length;
+  media.dataset.index = String(nextIndex);
+  imageEl.src = images[nextIndex];
 };
 
 function openInfoPanel(latlng, features, options = {}) {
@@ -1013,7 +1002,7 @@ function openInfoPanel(latlng, features, options = {}) {
       const props = feature.properties;
       const uid = `area-${index}`;
       const name = getVal(props, "Full_name") || getVal(props, "Full_Name") || "Unknown Area";
-      const img = getVal(props, "Area_Image_URL_1") || getVal(props, "Area_Image_URL_2") || getVal(props, "Area_Image_URL_3");
+      const images = getAreaImages(props);
       const stateUrl = getVal(props, "State_Fishing_Regs_URL") || "https://dlnr.hawaii.gov/dar/fishing/fishing-regulations/";
 
       const renderFieldIndented = (alias, value, isBullet = false, isDate = false) => {
@@ -1027,17 +1016,17 @@ function openInfoPanel(latlng, features, options = {}) {
 
       return `
         <div class="area-section mmcard">
-          ${img ? `<img style="width:100%; aspect-ratio:16/9; object-fit:cover; display:block;" src="${img}">` : ""}
+          ${images.length ? `<div class="mmcard__media" data-images="${images.join("|")}" data-index="0"><img class="mmcard__image" src="${images[0]}" alt="${name}">${images.length > 1 ? `<button class="mmcard__image-nav" type="button" aria-label="Next image" onclick="cycleAreaImage(this,1)">›</button>` : ""}</div>` : ""}
           <div class="mmcard__body">
             <h3 class="mmcard__title">${name}</h3>
 
             <div class="mmtabs">
-              <button class="active" type="button" onclick="showTab(this,'about-${uid}')">ABOUT</button>
-              <button type="button" onclick="showTab(this,'rules-${uid}')">RULES</button>
+              <button type="button" onclick="showTab(this,'about-${uid}')">ABOUT</button>
+              <button class="active" type="button" onclick="showTab(this,'rules-${uid}')">RULES</button>
               <button type="button" onclick="showTab(this,'laws-${uid}')">LAWS</button>
             </div>
 
-            <div id="about-${uid}" class="tab-pane" style="display:block;">
+            <div id="about-${uid}" class="tab-pane" style="display:none;">
               ${renderFieldIndented("Designation", joinFields(props, "Designation_1", "Designation_2", "Designation_3"))}
               ${renderFieldIndented("Island", getVal(props, "Island"))}
               ${renderFieldIndented("Purpose", getVal(props, "Purpose"), true)}
@@ -1048,7 +1037,7 @@ function openInfoPanel(latlng, features, options = {}) {
               ${getVal(props, "DAR_URL") ? `<a class="reg-link" href="${getVal(props, "DAR_URL")}" target="_blank">OFFICIAL DAR PAGE ›</a>` : ""}
             </div>
 
-            <div id="rules-${uid}" class="tab-pane" style="display:none;">
+            <div id="rules-${uid}" class="tab-pane" style="display:block;">
               <div class="mm-statewide-notice">
                 The site-specific rules below apply in addition to all
                 <a href="${stateUrl}" target="_blank">Statewide Fishing Regulations</a>.
