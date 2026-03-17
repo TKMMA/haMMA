@@ -48,6 +48,12 @@ window.toggleSummaryAccordion = function (btn) {
   panel.classList.toggle("expanded");
   const expanded = panel.classList.contains("expanded");
   btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+  const label = btn.querySelector(".summary-accordion__label");
+  if (label) {
+    label.textContent = expanded
+      ? "Hide consolidated fishing rules"
+      : "See consolidated fishing rules summary at this location";
+  }
 };
 
 const getVal = (props, key) => {
@@ -948,6 +954,14 @@ window.hoverArea = (islandName, areaName) => {
   applyHoverHighlight(matchedLayer);
 };
 
+window.clearSidebarSearch = () => {
+  const input = document.getElementById("area-search");
+  if (!input) return;
+  input.value = "";
+  filterSidebar();
+  input.focus();
+};
+
 window.filterSidebar = () => {
   const raw = document.getElementById("area-search")?.value || "";
   const term = normalizeHawaiianText(raw);
@@ -1030,7 +1044,7 @@ function openInfoPanel(latlng, features, options = {}) {
     summaryCardHtml = `
       <div class="summary-accordion">
         <button class="summary-accordion__toggle" type="button" onclick="toggleSummaryAccordion(this)" aria-expanded="false">
-          <span class="summary-accordion__label">See CONSOLIDATED FISHING RULES SUMMARY at this location</span>
+          <span class="summary-accordion__label">See consolidated fishing rules summary at this location</span>
           <span class="summary-accordion__chevron" aria-hidden="true">▼</span>
         </button>
         <div class="summary-accordion__panel">
