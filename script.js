@@ -1,5 +1,5 @@
 /**
- * 1. CONFIG & STATE
+ * 1. CONFIGURATION & STATE
  */
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
@@ -8,21 +8,33 @@ const appState = {
   allIslandLayers: {},
   activeAccordionLayer: null,
   activeHoverLayer: null,
-  isFetching: false,
-  hintTimer: null
+  activeSelectionMarker: null,
+  hintTimer: null,
+  isCompact: false
 };
 
 /**
- * 2. PERFORMANCE: SIDEBAR BUILDER
- * Uses DocumentFragment to prevent layout thrashing.
+ * 2. CORE UTILITIES
+ */
+const getVal = (props, key) => {
+  const foundKey = Object.keys(props).find((k) => k.toLowerCase() === key.toLowerCase());
+  const val = foundKey ? props[foundKey] : null;
+  return val === "N/A" || val === "" || val === null ? null : val;
+};
+
+const normalizeHawaiianText = (str) => {
+  if (!str) return "";
+  return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[ʻ\u02BB\u02BC'’‘`]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+};
+
+/**
+ * 3. SIDEBAR & UI BUILDER
+ * Uses DocumentFragment for performance (Suggestion #2)
  */
 function populateSidebar(islandName, features) {
   const container = document.getElementById("island-list");
   if (!container) return;
-
-  // Remove loading notice on first success
-  const status = document.getElementById("status-message");
-  if (status) status.remove();
 
   const fragment = document.createDocumentFragment();
   const islandId = islandName.replace(/[^a-zA-Z0-9]/g, "");
@@ -30,9 +42,9 @@ function populateSidebar(islandName, features) {
   const group = document.createElement("div");
   group.className = "island-group";
 
-  // Island Header (Accessibility: Button)
   const header = document.createElement("button");
   header.className = "island-header";
+  header.id = `header-${islandId}`;
   header.setAttribute("aria-expanded", "false");
   header.onclick = () => window.toggleIsland(islandId);
   
@@ -48,7 +60,6 @@ function populateSidebar(islandName, features) {
   list.id = `list-${islandId}`;
   list.className = "area-list";
 
-  // Build items efficiently
   features.sort((a, b) => {
     const nameA = getVal(a.properties, "Full_Name") || "";
     const nameB = getVal(b.properties, "Full_Name") || "";
@@ -57,11 +68,12 @@ function populateSidebar(islandName, features) {
     const areaName = getVal(f.properties, "Full_Name") || "Unknown Area";
     const item = document.createElement("div");
     item.className = "area-item";
-    item.tabIndex = 0; // Keyboard focus
+    item.tabIndex = 0; // Keyboard Accessibility (Suggestion #9)
     item.role = "button";
     item.textContent = areaName;
+    item.dataset.island = islandName;
+    item.dataset.area = areaName;
     
-    // Listeners
     item.onclick = () => window.zoomToArea(islandName, areaName);
     item.onkeydown = (e) => { if (e.key === "Enter") window.zoomToArea(islandName, areaName); };
     item.onmouseenter = () => window.hoverArea(islandName, areaName);
@@ -74,13 +86,19 @@ function populateSidebar(islandName, features) {
   group.appendChild(list);
   fragment.appendChild(group);
   container.appendChild(fragment);
+
+  // Remove loading notice on first success
+  const status = document.getElementById("status-message");
+  if (status && status.classList.contains("loading-notice")) status.remove();
 }
 
 /**
- * 3. UX: COMPACT MODE & HINTS
+ * 4. UX: HINTS & COMPACT MODE
  */
-function setCompactMode(isCompact) {
-  document.getElementById("brand-panel")?.classList.toggle("compact", isCompact);
+function setCompactMode(enabled) {
+  if (appState.isCompact === enabled) return;
+  appState.isCompact = enabled;
+  document.getElementById("brand-panel").classList.toggle("compact", enabled);
 }
 
 function showInfoHint() {
@@ -100,23 +118,45 @@ function showInfoHint() {
 
   if (appState.hintTimer) clearTimeout(appState.hintTimer);
   el.classList.add("active");
-  
-  // Increased to 8 seconds per suggestion #7
+  // Increased duration (Suggestion #7)
   appState.hintTimer = setTimeout(() => el.classList.remove("active"), 8000);
 }
 
 /**
- * 4. DATA FETCHING & ERROR HANDLING
+ * 5. MAP LOGIC & DATA FETCH
  */
+const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
+L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { attribution: "Esri" }).addTo(map);
+
+// Trigger Compact Mode on interaction (Suggestion #8)
+map.on('movestart', () => setCompactMode(true));
+
 async function loadMapData() {
   const statusEl = document.getElementById("status-message");
   try {
     const response = await fetch(`${SERVICE_LAYER_URL}/query?where=1%3D1&outFields=*&f=geojson`);
-    if (!response.ok) throw new Error("Network response was not ok");
+    if (!response.ok) throw new Error("Fetch failed");
     
     const data = await response.json();
-    processFeatures(data.features);
+    
+    // Grouping by island
+    const groups = {};
+    data.features.forEach(f => {
+      const island = getVal(f.properties, "Island") || "Other";
+      if (!groups[island]) groups[island] = [];
+      groups[island].push(f);
+    });
+
+    islandDisplayOrder.forEach(name => {
+      if (groups[name]) {
+        // ... include your Leaflet layer creation logic here ...
+        populateSidebar(name, groups[name]);
+      }
+    });
+    
+    showInfoHint();
   } catch (error) {
+    // Error Handling (Suggestion #11)
     if (statusEl) {
       statusEl.className = "error-notice";
       statusEl.innerHTML = `
@@ -128,14 +168,8 @@ async function loadMapData() {
 }
 
 /**
- * 5. MAP LOGIC (KEEPING SMART CENTERING)
- */
-// ... Include your existing flySelectionIntoVisibleArea, tile layers, and pointInFeatureGeometry here ...
-
-// Add trigger for Compact Mode
-map.on('movestart', () => setCompactMode(true));
-
-/**
- * INITIALIZE
+ * 6. INITIALIZATION
  */
 loadMapData();
+
+// ... Append your existing flySelectionIntoVisibleArea and toggle logic here ...
