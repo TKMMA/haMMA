@@ -1167,7 +1167,8 @@ function openInfoPanel(latlng, features, options = {}) {
     </div>
   `;
 
-  content.scrollTop = 0;
+  const infoScrollEl = content.querySelector(".mmpopup__scroll");
+  if (infoScrollEl) infoScrollEl.scrollTop = 0;
   updateInfoBannerTitle();
 
   if (isMobileView()) {
