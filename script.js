@@ -1,6 +1,7 @@
 const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
+const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.75, -160.8], [22.5, -154.5]]);
 let activeSelectionMarker = null;
 let activeAccordionLayer = null;
 let activeHoverLayer = null;
@@ -378,6 +379,23 @@ syncSidebarToggleUI();
 const map = L.map("map", { zoomControl: false }).setView([20.4, -157.4], 7);
 const zoomControl = L.control.zoom({ position: isMobileView() ? "bottomright" : "topright" }).addTo(map);
 
+
+function setInitialMapExtent() {
+  if (!map) return;
+
+  if (isMobileView()) {
+    map.fitBounds(INITIAL_CHAIN_BOUNDS, { paddingTopLeft: [12, 70], paddingBottomRight: [12, 30], maxZoom: 8 });
+    return;
+  }
+
+  const leftOverlayWidth = getLeftOverlayWidth();
+  map.fitBounds(INITIAL_CHAIN_BOUNDS, {
+    paddingTopLeft: [Math.max(24, Math.round(leftOverlayWidth) + 24), 30],
+    paddingBottomRight: [24, 30],
+    maxZoom: 8
+  });
+}
+
 function syncLeafletControlPosition() {
   const targetPosition = isMobileView() ? "bottomright" : "topright";
   if (zoomControl.options.position === targetPosition) return;
@@ -444,6 +462,8 @@ L.tileLayer(
   { attribution: "Labels", pane: "shadowPane" }
 ).addTo(map);
 
+setInitialMapExtent();
+
 // NEW: Trigger Compact Mode Logic
 function setCompactMode() {
   isCompactMode = false;
@@ -492,7 +512,7 @@ function ensureInfoHint() {
   el.id = "info-empty-hint";
   el.className = "info-empty-hint";
   el.innerHTML = `
-    <span>Click a shape on the map for area details.</span>
+    <span>Click a shape on the map or an item from the list to see area details.</span>
     <button class="hint-dismiss" onclick="window.hideInfoHint()" aria-label="Dismiss hint">✕</button>
   `;
   host.appendChild(el);
@@ -1329,3 +1349,4 @@ map.on("click", () => {
 document.getElementById("area-search")?.addEventListener("focus", () => setCompactMode(true));
 
 loadAllFromSingleService();
+showInfoHint();

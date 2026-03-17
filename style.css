@@ -45,7 +45,7 @@ body, html {
   width: var(--sidebar-width);
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary-main));
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 6px 12px;
   box-sizing: border-box;
   z-index: 1002;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
@@ -54,32 +54,32 @@ body, html {
 
 /* NEW: Compact Mode */
 .brand-panel.compact {
-  padding: 10px 14px;
+  padding: 6px 12px;
   width: var(--sidebar-width);
   min-width: 0;
 }
-.brand-panel.compact .brand-logo { width: 54px; height: 54px; }
-.brand-panel.compact .brand-title-main { font-size: 20px; }
-.brand-panel.compact .brand-title-sub { font-size: 14px; }
+.brand-panel.compact .brand-logo { width: 42px; height: 42px; }
+.brand-panel.compact .brand-title-main { font-size: 17px; }
+.brand-panel.compact .brand-title-sub { font-size: 11px; }
 .brand-panel.compact .brand-side-label { display: block; }
 
 .brand-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(76px, 1fr) auto minmax(140px, auto) auto minmax(76px, 1fr);
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  column-gap: 10px;
   text-align: center;
 }
 .brand-panel.compact .brand-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(76px, 1fr) auto minmax(140px, auto) auto minmax(76px, 1fr);
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  column-gap: 10px;
 }
 
 .brand-side-label {
   font-family: var(--font-secondary);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
   text-align: center;
@@ -87,10 +87,10 @@ body, html {
 }
 .brand-header .brand-side-label { flex: 1 1 0; }
 
-.brand-logo { width: 54px; height: 54px; object-fit: contain; transition: width 0.3s, height 0.3s; }
+.brand-logo { width: 42px; height: 42px; object-fit: contain; transition: width 0.3s, height 0.3s; }
 .brand-title-block { display: flex; flex-direction: column; align-items: center; justify-self: center; }
-.brand-title-main { margin: 0; color: #fff; font-size: 20px; font-weight: 700; line-height: 1.1; transition: font-size 0.3s; }
-.brand-title-sub { color: rgba(255, 255, 255, 0.95); font-family: var(--font-secondary); font-size: 14px; font-weight: 500; transition: font-size 0.3s; }
+.brand-title-main { margin: 0; color: #fff; font-size: 17px; font-weight: 700; line-height: 1.1; transition: font-size 0.3s; }
+.brand-title-sub { color: rgba(255, 255, 255, 0.95); font-family: var(--font-secondary); font-size: 11px; font-weight: 500; transition: font-size 0.3s; }
 
 .map-sidebar {
   position: absolute;
