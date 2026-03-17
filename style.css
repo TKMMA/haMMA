@@ -6,7 +6,8 @@
   --transition-speed: 0.3s;
   --panel-margin: 15px;
   --panel-gap: calc(var(--panel-margin) + 12px);
-  --panel-stack-offset: 92px;
+  --panel-stack-offset: 84px;
+  --top-band-height: 50px;
 
   --color-primary-dark: #003366;
   --color-primary-main: #005FA9;
@@ -41,7 +42,7 @@ body, html {
   position: absolute;
   top: var(--panel-margin);
   left: var(--panel-margin);
-  width: calc(var(--sidebar-width) + var(--info-panel-width) + (var(--panel-margin) * 2) + 12px);
+  width: var(--sidebar-width);
   background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary-main));
   border-radius: 12px;
   padding: 10px 14px;
@@ -53,24 +54,27 @@ body, html {
 
 /* NEW: Compact Mode */
 .brand-panel.compact {
-  padding: 6px 14px;
-  width: auto;
-  min-width: 300px;
+  padding: 10px 14px;
+  width: var(--sidebar-width);
+  min-width: 0;
 }
-.brand-panel.compact .brand-logo { width: 34px; height: 34px; }
-.brand-panel.compact .brand-title-main { font-size: 16px; }
-.brand-panel.compact .brand-title-sub { font-size: 12px; }
-.brand-panel.compact .brand-side-label { display: none; }
+.brand-panel.compact .brand-logo { width: 54px; height: 54px; }
+.brand-panel.compact .brand-title-main { font-size: 20px; }
+.brand-panel.compact .brand-title-sub { font-size: 14px; }
+.brand-panel.compact .brand-side-label { display: block; }
 
 .brand-header {
-  display: grid;
-  grid-template-columns: minmax(110px, 1fr) auto minmax(220px, auto) auto minmax(110px, 1fr);
+  display: flex;
   align-items: center;
-  column-gap: 16px;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
 }
 .brand-panel.compact .brand-header {
-  grid-template-columns: auto auto 1fr auto auto;
-  column-gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .brand-side-label {
@@ -81,8 +85,7 @@ body, html {
   text-align: center;
   line-height: 1.2;
 }
-.brand-header .brand-side-label:first-child { justify-self: end; }
-.brand-header .brand-side-label:last-child { justify-self: start; }
+.brand-header .brand-side-label { flex: 1 1 0; }
 
 .brand-logo { width: 54px; height: 54px; object-fit: contain; transition: width 0.3s, height 0.3s; }
 .brand-title-block { display: flex; flex-direction: column; align-items: center; justify-self: center; }
@@ -106,7 +109,11 @@ body, html {
 }
 
 .sidebar-search-wrap {
-  padding: 10px 12px;
+  min-height: var(--top-band-height);
+  padding: 8px 12px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
   background: #e2eef8;
   border-bottom: 1px solid #c8d9e6;
 }
@@ -291,13 +298,14 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
 .close-info-btn { position: sticky; top: 12px; right: 12px; margin: 12px 12px -40px auto; width: 28px; height: 28px; background: rgba(255,255,255,0.9); border: 1px solid #ddd; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1001; }
 
 .mmpopup { background: #fff; width: 100%; height: 100%; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
-.mmpopup__header { position: sticky; top: 0; z-index: 5; width: 100%; margin: 0; box-sizing: border-box; padding: 10px 12px; min-height: 50px; display: flex; align-items: center; justify-content: center; background: #e2eef8; border-bottom: 1px solid #c8d9e6; text-align: center; border-top-left-radius: 12px; border-top-right-radius: 12px; }
+.mmpopup__header { position: sticky; top: 0; z-index: 5; width: 100%; margin: 0; box-sizing: border-box; padding: 8px 12px; min-height: var(--top-band-height); display: flex; align-items: center; justify-content: center; background: #e2eef8; border-bottom: 1px solid #c8d9e6; text-align: center; border-top-left-radius: 12px; border-top-right-radius: 12px; }
 .mmpopup__header-title { font-family: var(--font-primary); font-size: 12px; font-weight: 700; color: #5f6d76; text-transform: uppercase; }
 .mmpopup__scroll { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; padding: 10px 12px; display: block; }
 .mmpopup__scroll > * { max-width: 100%; }
 
 
-.summary-accordion { margin: 0 0 12px; }
+.summary-accordion { position: sticky; top: 0; z-index: 4; margin: 0 0 12px; background: #fff; }
+.summary-accordion.expanded { position: static; }
 .summary-accordion__toggle {
   width: 100%;
   display: flex;

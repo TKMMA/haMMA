@@ -42,6 +42,15 @@ document.addEventListener("click", (event) => {
   wrap.dataset.carouselIndex = String(nextIndex);
   img.src = urls[nextIndex];
 });
+function collapseSummaryAccordion(summaryEl) {
+  if (!summaryEl || !summaryEl.classList.contains("expanded")) return;
+  summaryEl.classList.remove("expanded");
+  const btn = summaryEl.querySelector(".summary-accordion__toggle");
+  const label = btn?.querySelector(".summary-accordion__label");
+  if (btn) btn.setAttribute("aria-expanded", "false");
+  if (label) label.textContent = "See consolidated fishing rules summary at this location";
+}
+
 window.toggleSummaryAccordion = function (btn) {
   const panel = btn?.closest(".summary-accordion");
   if (!panel) return;
@@ -436,11 +445,8 @@ L.tileLayer(
 ).addTo(map);
 
 // NEW: Trigger Compact Mode Logic
-function setCompactMode(enabled) {
-  if (isCompactMode === enabled || isMobileView()) return;
-  isCompactMode = enabled;
-  const brandPanel = document.getElementById("brand-panel");
-  if (brandPanel) brandPanel.classList.toggle("compact", enabled);
+function setCompactMode() {
+  isCompactMode = false;
 }
 
 function getLeftOverlayWidth() {
@@ -1168,7 +1174,16 @@ function openInfoPanel(latlng, features, options = {}) {
   `;
 
   const infoScrollEl = content.querySelector(".mmpopup__scroll");
-  if (infoScrollEl) infoScrollEl.scrollTop = 0;
+  const summaryAccordionEl = content.querySelector(".summary-accordion");
+  if (infoScrollEl) {
+    infoScrollEl.scrollTop = 0;
+    infoScrollEl.onscroll = () => {
+      if (!summaryAccordionEl || !summaryAccordionEl.classList.contains("expanded")) return;
+      const summaryRect = summaryAccordionEl.getBoundingClientRect();
+      const scrollerRect = infoScrollEl.getBoundingClientRect();
+      if (summaryRect.bottom <= scrollerRect.top + 6) collapseSummaryAccordion(summaryAccordionEl);
+    };
+  }
   updateInfoBannerTitle();
 
   if (isMobileView()) {
