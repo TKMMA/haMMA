@@ -1,7 +1,7 @@
 const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
-const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.75, -160.8], [22.5, -154.5]]);
+const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.9, -160.55], [22.35, -154.75]]);
 let activeSelectionMarker = null;
 let activeAccordionLayer = null;
 let activeHoverLayer = null;
@@ -384,7 +384,7 @@ function setInitialMapExtent() {
   if (!map) return;
 
   if (isMobileView()) {
-    map.fitBounds(INITIAL_CHAIN_BOUNDS, { paddingTopLeft: [12, 70], paddingBottomRight: [12, 30], maxZoom: 8 });
+    map.fitBounds(INITIAL_CHAIN_BOUNDS, { paddingTopLeft: [12, 70], paddingBottomRight: [12, 30], maxZoom: 8.5 });
     return;
   }
 
@@ -392,7 +392,7 @@ function setInitialMapExtent() {
   map.fitBounds(INITIAL_CHAIN_BOUNDS, {
     paddingTopLeft: [Math.max(24, Math.round(leftOverlayWidth) + 24), 30],
     paddingBottomRight: [24, 30],
-    maxZoom: 8
+    maxZoom: 8.5
   });
 }
 
