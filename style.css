@@ -58,39 +58,40 @@ body, html {
   width: var(--sidebar-width);
   min-width: 0;
 }
-.brand-panel.compact .brand-logo { width: 42px; height: 42px; }
-.brand-panel.compact .brand-title-main { font-size: 17px; }
-.brand-panel.compact .brand-title-sub { font-size: 11px; }
+.brand-panel.compact .brand-logo { width: 36px; height: 36px; }
+.brand-panel.compact .brand-title-main { font-size: 15px; }
+.brand-panel.compact .brand-title-sub { font-size: 10px; }
 .brand-panel.compact .brand-side-label { display: block; }
 
 .brand-header {
   display: grid;
-  grid-template-columns: minmax(76px, 1fr) auto minmax(140px, auto) auto minmax(76px, 1fr);
+  grid-template-columns: minmax(54px, 0.9fr) auto minmax(0, 1fr) auto minmax(54px, 0.9fr);
   align-items: center;
-  column-gap: 10px;
+  column-gap: 8px;
   text-align: center;
 }
 .brand-panel.compact .brand-header {
   display: grid;
-  grid-template-columns: minmax(76px, 1fr) auto minmax(140px, auto) auto minmax(76px, 1fr);
+  grid-template-columns: minmax(54px, 0.9fr) auto minmax(0, 1fr) auto minmax(54px, 0.9fr);
   align-items: center;
-  column-gap: 10px;
+  column-gap: 8px;
 }
 
 .brand-side-label {
   font-family: var(--font-secondary);
-  font-size: 10px;
+  font-size: 8.5px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 .brand-header .brand-side-label { flex: 1 1 0; }
 
-.brand-logo { width: 42px; height: 42px; object-fit: contain; transition: width 0.3s, height 0.3s; }
-.brand-title-block { display: flex; flex-direction: column; align-items: center; justify-self: center; }
-.brand-title-main { margin: 0; color: #fff; font-size: 17px; font-weight: 700; line-height: 1.1; transition: font-size 0.3s; }
-.brand-title-sub { color: rgba(255, 255, 255, 0.95); font-family: var(--font-secondary); font-size: 11px; font-weight: 500; transition: font-size 0.3s; }
+.brand-logo { width: 36px; height: 36px; object-fit: contain; transition: width 0.3s, height 0.3s; }
+.brand-title-block { display: flex; flex-direction: column; align-items: center; justify-self: center; min-width: 0; text-align: center; }
+.brand-title-main { margin: 0; color: #fff; font-size: 15px; font-weight: 700; line-height: 1.05; transition: font-size 0.3s; }
+.brand-title-sub { color: rgba(255, 255, 255, 0.95); font-family: var(--font-secondary); font-size: 10px; font-weight: 500; line-height: 1.15; transition: font-size 0.3s; }
 
 .map-sidebar {
   position: absolute;
@@ -354,6 +355,63 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
 .reg-link { display: block; margin-top: 12px; padding: 10px 12px; background: var(--primary-blue); color: #fff; text-decoration: none; border-radius: 10px; font-size: 12px; font-family: var(--font-primary); font-weight: 700; text-align: center; }
 .reg-link:hover { filter: brightness(1.05); }
 
+.field-stack,
+.summary-field-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.field-block,
+.summary-field-block {
+  padding: 12px;
+}
+
+.field-block { border-radius: 0; }
+.summary-field-block { border-radius: 10px; }
+
+.field-stack .field-block:nth-child(odd) { background: #eef4fa; }
+.field-stack .field-block:nth-child(even) { background: #dde9f4; }
+
+.summary-field-stack .summary-field-block:nth-child(odd) { background: rgba(255, 255, 255, 0.42); }
+.summary-field-stack .summary-field-block:nth-child(even) { background: rgba(180, 204, 221, 0.34); }
+
+.field-block__label {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #22343d;
+}
+
+.summary-field-block .summary-section-title { margin-top: 0; }
+.summary-field-block .area-label:first-of-type { margin-top: 0; }
+
+.rule-rich-text,
+.rule-callout__body {
+  display: grid;
+  gap: 4px;
+}
+
+.rule-callout {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.rule-callout__label {
+  font-weight: 700;
+}
+
+.rule-callout__label--prohibited { color: #b42318; }
+.rule-callout__label--allowed { color: #1f7a1f; }
+
+.rule-line {
+  color: #1e2f3a;
+  line-height: 1.45;
+}
+
+.rule-line--dash {
+  padding-left: 12px;
+  text-indent: -12px;
+}
 
 .mmcard__image-wrap { position: relative; }
 .mmcard__image { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
@@ -394,9 +452,9 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
     grid-template-columns: auto minmax(0, 1fr) auto;
     column-gap: 8px;
   }
-  .brand-logo { width: 34px; height: 34px; }
-  .brand-title-main { font-size: 16px; }
-  .brand-title-sub { font-size: 11px; }
+  .brand-logo { width: 30px; height: 30px; }
+  .brand-title-main { font-size: 14px; }
+  .brand-title-sub { font-size: 10px; }
 
   .pane-stage {
     position: fixed;
