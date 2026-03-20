@@ -355,6 +355,34 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
 .reg-link { display: block; margin-top: 12px; padding: 10px 12px; background: var(--primary-blue); color: #fff; text-decoration: none; border-radius: 10px; font-size: 12px; font-family: var(--font-primary); font-weight: 700; text-align: center; }
 .reg-link:hover { filter: brightness(1.05); }
 
+.rule-rich-text,
+.rule-callout__body {
+  display: grid;
+  gap: 4px;
+}
+
+.rule-callout {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.rule-callout__label {
+  font-weight: 700;
+}
+
+.rule-callout__label--prohibited { color: #b42318; }
+.rule-callout__label--allowed { color: #1f7a1f; }
+
+.rule-line {
+  color: #1e2f3a;
+  line-height: 1.45;
+}
+
+.rule-line--dash {
+  padding-left: 12px;
+  text-indent: -12px;
+}
 
 .mmcard__image-wrap { position: relative; }
 .mmcard__image { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
