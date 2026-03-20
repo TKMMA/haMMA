@@ -1,7 +1,7 @@
 const allIslandLayers = {};
 const SERVICE_LAYER_URL = "https://services.arcgis.com/HQ0xoN0EzDPBOEci/ArcGIS/rest/services/TK_MMA_FEATURECLASS/FeatureServer/727";
 const islandDisplayOrder = ["Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe"];
-const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.75, -160.8], [22.5, -154.5]]);
+const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.9, -160.55], [22.35, -154.75]]);
 let activeSelectionMarker = null;
 let activeAccordionLayer = null;
 let activeHoverLayer = null;
@@ -95,6 +95,57 @@ const formatDate = (dateVal) => {
 };
 
 const joinFields = (props, ...keys) => keys.map((k) => getVal(props, k)).filter(Boolean).join("<br>");
+
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
+const normalizeRuleSegments = (text) => String(text)
+  .replace(/\r\n?/g, "\n")
+  .replace(/\s+-\s+/g, "\n- ");
+
+const formatRuleBody = (text) => {
+  const segments = normalizeRuleSegments(text)
+    .split("\n")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  return segments
+    .map((segment) => `<div class="rule-line${segment.startsWith("-") ? " rule-line--dash" : ""}">${escapeHtml(segment)}</div>`)
+    .join("");
+};
+
+const formatRuleText = (text) => {
+  if (!text || text === "N/A") return "N/A";
+
+  const lines = String(text)
+    .replace(/\r\n?/g, "\n")
+    .replace(/([^\n])\s+(?=(?:Allowed|Prohibited)[^:\n]*:\s*)/gi, "$1\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  return lines
+    .map((line) => {
+      const match = line.match(/^(?:[-•]\s*)?(Prohibited[^:]*:|Allowed[^:]*:)(.*)$/i);
+      if (!match) return formatRuleBody(line);
+
+      const [, label, body] = match;
+      const labelType = /^prohibited/i.test(label) ? "prohibited" : "allowed";
+      const formattedBody = body.trim() ? `<div class="rule-callout__body">${formatRuleBody(body)}</div>` : "";
+
+      return `
+        <div class="rule-callout rule-callout--${labelType}">
+          <span class="rule-callout__label rule-callout__label--${labelType}">${escapeHtml(label.trim())}</span>
+          ${formattedBody}
+        </div>
+      `;
+    })
+    .join("");
+};
 
 const normalizeHawaiianText = (str) => {
   if (!str) return "";
@@ -384,7 +435,7 @@ function setInitialMapExtent() {
   if (!map) return;
 
   if (isMobileView()) {
-    map.fitBounds(INITIAL_CHAIN_BOUNDS, { paddingTopLeft: [12, 70], paddingBottomRight: [12, 30], maxZoom: 8 });
+    map.fitBounds(INITIAL_CHAIN_BOUNDS, { paddingTopLeft: [12, 70], paddingBottomRight: [12, 30], maxZoom: 8.5 });
     return;
   }
 
@@ -392,7 +443,7 @@ function setInitialMapExtent() {
   map.fitBounds(INITIAL_CHAIN_BOUNDS, {
     paddingTopLeft: [Math.max(24, Math.round(leftOverlayWidth) + 24), 30],
     paddingBottomRight: [24, 30],
-    maxZoom: 8
+    maxZoom: 8.5
   });
 }
 
@@ -1055,15 +1106,17 @@ function openInfoPanel(latlng, features, options = {}) {
       if (!items.length) return "";
 
       return (
-        `<div class="summary-section-title">${title}</div>` +
-        items
-          .map(
-            (item) => `
-              <div class="area-label">${item.name}:</div>
-              <div style="margin-bottom:8px;">${formatBulletsWithIndents(item.val)}</div>
-            `
-          )
-          .join("")
+        `<div class="summary-field-block">
+          <div class="summary-section-title">${title}</div>
+          ${items
+            .map(
+              (item) => `
+                <div class="area-label">${item.name}:</div>
+                <div class="rule-rich-text">${formatRuleText(item.val)}</div>
+              `
+            )
+            .join("")}
+        </div>`
       );
     };
 
@@ -1082,15 +1135,16 @@ function openInfoPanel(latlng, features, options = {}) {
               <div class="mmcard__subtitle">${areaNamesHtml}</div>
 
               <div class="mm-statewide-notice">
-                The site-specific rules below apply in addition to all
-                <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>.
+                Reminder: All
+                <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>
+                still a apply here.
               </div>
 
               <div class="mmtabs">
                 <button class="active" type="button">CONSOLIDATED RULES</button>
               </div>
 
-              <div class="tab-pane">
+              <div class="tab-pane summary-field-stack">
                 ${buildSummaryBlock("Gear Restrictions", "Rules_Gear")}
                 ${buildSummaryBlock("Species & Bag Limits", "Rules_Species_Size_Bag")}
                 ${buildSummaryBlock("Prohibited Activities", "Rules_Activities")}
@@ -1118,11 +1172,11 @@ function openInfoPanel(latlng, features, options = {}) {
       ].filter(Boolean);
       const stateUrl = getVal(props, "State_Fishing_Regs_URL") || "https://dlnr.hawaii.gov/dar/fishing/fishing-regulations/";
 
-      const renderFieldIndented = (alias, value, isBullet = false, isDate = false) => {
+      const renderFieldIndented = (alias, value, isBullet = false, isDate = false, isRuleText = false) => {
         if (!value || value === "N/A" || value === "") return "";
-        const displayValue = isDate ? formatDate(value) : isBullet ? formatBulletsWithIndents(value) : value;
-        return `<div style="margin-bottom:12px;">
-          <div style="font-weight:700; margin-bottom:2px;">${alias}</div>
+        const displayValue = isRuleText ? formatRuleText(value) : isDate ? formatDate(value) : isBullet ? formatBulletsWithIndents(value) : value;
+        return `<div class="field-block">
+          <div class="field-block__label">${alias}</div>
           <div>${displayValue}</div>
         </div>`;
       };
@@ -1142,7 +1196,7 @@ function openInfoPanel(latlng, features, options = {}) {
               <button type="button" onclick="showTab(this,'laws-${uid}')">LAWS</button>
             </div>
 
-            <div id="about-${uid}" class="tab-pane" style="display:none;">
+            <div id="about-${uid}" class="tab-pane field-stack" style="display:none;">
               ${renderFieldIndented("Designation", joinFields(props, "Designation_1", "Designation_2", "Designation_3"))}
               ${renderFieldIndented("Island", getVal(props, "Island"))}
               ${renderFieldIndented("Purpose", getVal(props, "Purpose"), true)}
@@ -1153,20 +1207,21 @@ function openInfoPanel(latlng, features, options = {}) {
               ${getVal(props, "DAR_URL") ? `<a class="reg-link" href="${getVal(props, "DAR_URL")}" target="_blank">OFFICIAL DAR PAGE ›</a>` : ""}
             </div>
 
-            <div id="rules-${uid}" class="tab-pane" style="display:block;">
+            <div id="rules-${uid}" class="tab-pane field-stack" style="display:block;">
               <div class="mm-statewide-notice">
-                The site-specific rules below apply in addition to all
-                <a href="${stateUrl}" target="_blank">Statewide Fishing Regulations</a>.
+                Reminder: All
+                <a href="${stateUrl}" target="_blank">Statewide Fishing Regulations</a>
+                still a apply here.
               </div>
-              ${renderFieldIndented("Gear Rules", getVal(props, "Rules_Gear"), true)}
-              ${renderFieldIndented("Species & Bag Limits", getVal(props, "Rules_Species_Size_Bag"), true)}
-              ${renderFieldIndented("Activities Rules", getVal(props, "Rules_Activities"), true)}
-              ${renderFieldIndented("Seasons & Times Rules", getVal(props, "Rules_Seasons_Times"), true)}
-              ${renderFieldIndented("Transit & Anchor Rules", getVal(props, "Rules_Transit_Anchor"), true)}
+              ${renderFieldIndented("Gear Rules", getVal(props, "Rules_Gear"), false, false, true)}
+              ${renderFieldIndented("Species & Bag Limits", getVal(props, "Rules_Species_Size_Bag"), false, false, true)}
+              ${renderFieldIndented("Activities Rules", getVal(props, "Rules_Activities"), false, false, true)}
+              ${renderFieldIndented("Seasons & Times Rules", getVal(props, "Rules_Seasons_Times"), false, false, true)}
+              ${renderFieldIndented("Transit & Anchor Rules", getVal(props, "Rules_Transit_Anchor"), false, false, true)}
             </div>
 
-            <div id="laws-${uid}" class="tab-pane" style="display:none;">
-              ${getVal(props, "HAR_Name") ? `<div><strong>HAR Name:</strong> ${getVal(props, "HAR_Name")}</div>` : ""}
+            <div id="laws-${uid}" class="tab-pane field-stack" style="display:none;">
+              ${renderFieldIndented("HAR Name", getVal(props, "HAR_Name"))}
               ${getVal(props, "HAR_Link") ? `<a class="reg-link" href="${getVal(props, "HAR_Link")}" target="_blank">VIEW HAR PDF ›</a>` : ""}
               ${renderFieldIndented("Penalties", getVal(props, "Penalties"), true)}
             </div>
