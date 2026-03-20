@@ -363,15 +363,17 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
 
 .field-block,
 .summary-field-block {
-  border-radius: 10px;
   padding: 12px;
 }
 
-.field-stack .field-block:nth-child(odd) { background: #f4f8fb; }
-.field-stack .field-block:nth-child(even) { background: #ecf3f8; }
+.field-block { border-radius: 0; }
+.summary-field-block { border-radius: 10px; }
 
-.summary-field-stack .summary-field-block:nth-child(odd) { background: rgba(255, 255, 255, 0.3); }
-.summary-field-stack .summary-field-block:nth-child(even) { background: rgba(255, 255, 255, 0.16); }
+.field-stack .field-block:nth-child(odd) { background: #eef4fa; }
+.field-stack .field-block:nth-child(even) { background: #dde9f4; }
+
+.summary-field-stack .summary-field-block:nth-child(odd) { background: rgba(255, 255, 255, 0.42); }
+.summary-field-stack .summary-field-block:nth-child(even) { background: rgba(180, 204, 221, 0.34); }
 
 .field-block__label {
   font-weight: 700;
