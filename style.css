@@ -305,8 +305,8 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
 .mmpopup__scroll > * { max-width: 100%; }
 
 
-.summary-accordion { position: sticky; top: 0; z-index: 4; margin: 0 0 12px; background: #fff; }
-.summary-accordion.expanded { position: static; }
+.summary-accordion { position: sticky; top: 10px; z-index: 12; margin: 0 0 12px; background: #fff; pointer-events: auto; }
+.summary-accordion.expanded { position: relative; }
 .summary-accordion__toggle {
   width: 100%;
   display: flex;
@@ -323,6 +323,9 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
   font-family: var(--font-primary);
   font-size: 12px;
   font-weight: 700;
+  position: relative;
+  z-index: 13;
+  pointer-events: auto;
 }
 .summary-accordion__toggle:hover { background: #d1e2ee; }
 .summary-accordion__label { line-height: 1.35; }
