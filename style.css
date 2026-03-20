@@ -355,6 +355,33 @@ button:focus-visible, input:focus-visible, .area-item:focus-visible, .island-hea
 .reg-link { display: block; margin-top: 12px; padding: 10px 12px; background: var(--primary-blue); color: #fff; text-decoration: none; border-radius: 10px; font-size: 12px; font-family: var(--font-primary); font-weight: 700; text-align: center; }
 .reg-link:hover { filter: brightness(1.05); }
 
+.field-stack,
+.summary-field-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.field-block,
+.summary-field-block {
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.field-stack .field-block:nth-child(odd) { background: #f4f8fb; }
+.field-stack .field-block:nth-child(even) { background: #ecf3f8; }
+
+.summary-field-stack .summary-field-block:nth-child(odd) { background: rgba(255, 255, 255, 0.3); }
+.summary-field-stack .summary-field-block:nth-child(even) { background: rgba(255, 255, 255, 0.16); }
+
+.field-block__label {
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #22343d;
+}
+
+.summary-field-block .summary-section-title { margin-top: 0; }
+.summary-field-block .area-label:first-of-type { margin-top: 0; }
+
 .rule-rich-text,
 .rule-callout__body {
   display: grid;

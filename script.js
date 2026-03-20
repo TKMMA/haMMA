@@ -1106,15 +1106,17 @@ function openInfoPanel(latlng, features, options = {}) {
       if (!items.length) return "";
 
       return (
-        `<div class="summary-section-title">${title}</div>` +
-        items
-          .map(
-            (item) => `
-              <div class="area-label">${item.name}:</div>
-              <div class="rule-rich-text">${formatRuleText(item.val)}</div>
-            `
-          )
-          .join("")
+        `<div class="summary-field-block">
+          <div class="summary-section-title">${title}</div>
+          ${items
+            .map(
+              (item) => `
+                <div class="area-label">${item.name}:</div>
+                <div class="rule-rich-text">${formatRuleText(item.val)}</div>
+              `
+            )
+            .join("")}
+        </div>`
       );
     };
 
@@ -1133,15 +1135,16 @@ function openInfoPanel(latlng, features, options = {}) {
               <div class="mmcard__subtitle">${areaNamesHtml}</div>
 
               <div class="mm-statewide-notice">
-                The site-specific rules below apply in addition to all
-                <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>.
+                Reminder: All
+                <a href="${stateRegsUrl}" target="_blank">Statewide Fishing Regulations</a>
+                still a apply here.
               </div>
 
               <div class="mmtabs">
                 <button class="active" type="button">CONSOLIDATED RULES</button>
               </div>
 
-              <div class="tab-pane">
+              <div class="tab-pane summary-field-stack">
                 ${buildSummaryBlock("Gear Restrictions", "Rules_Gear")}
                 ${buildSummaryBlock("Species & Bag Limits", "Rules_Species_Size_Bag")}
                 ${buildSummaryBlock("Prohibited Activities", "Rules_Activities")}
@@ -1172,8 +1175,8 @@ function openInfoPanel(latlng, features, options = {}) {
       const renderFieldIndented = (alias, value, isBullet = false, isDate = false, isRuleText = false) => {
         if (!value || value === "N/A" || value === "") return "";
         const displayValue = isRuleText ? formatRuleText(value) : isDate ? formatDate(value) : isBullet ? formatBulletsWithIndents(value) : value;
-        return `<div style="margin-bottom:12px;">
-          <div style="font-weight:700; margin-bottom:2px;">${alias}</div>
+        return `<div class="field-block">
+          <div class="field-block__label">${alias}</div>
           <div>${displayValue}</div>
         </div>`;
       };
@@ -1193,7 +1196,7 @@ function openInfoPanel(latlng, features, options = {}) {
               <button type="button" onclick="showTab(this,'laws-${uid}')">LAWS</button>
             </div>
 
-            <div id="about-${uid}" class="tab-pane" style="display:none;">
+            <div id="about-${uid}" class="tab-pane field-stack" style="display:none;">
               ${renderFieldIndented("Designation", joinFields(props, "Designation_1", "Designation_2", "Designation_3"))}
               ${renderFieldIndented("Island", getVal(props, "Island"))}
               ${renderFieldIndented("Purpose", getVal(props, "Purpose"), true)}
@@ -1204,10 +1207,11 @@ function openInfoPanel(latlng, features, options = {}) {
               ${getVal(props, "DAR_URL") ? `<a class="reg-link" href="${getVal(props, "DAR_URL")}" target="_blank">OFFICIAL DAR PAGE ›</a>` : ""}
             </div>
 
-            <div id="rules-${uid}" class="tab-pane" style="display:block;">
+            <div id="rules-${uid}" class="tab-pane field-stack" style="display:block;">
               <div class="mm-statewide-notice">
-                The site-specific rules below apply in addition to all
-                <a href="${stateUrl}" target="_blank">Statewide Fishing Regulations</a>.
+                Reminder: All
+                <a href="${stateUrl}" target="_blank">Statewide Fishing Regulations</a>
+                still a apply here.
               </div>
               ${renderFieldIndented("Gear Rules", getVal(props, "Rules_Gear"), false, false, true)}
               ${renderFieldIndented("Species & Bag Limits", getVal(props, "Rules_Species_Size_Bag"), false, false, true)}
@@ -1216,8 +1220,8 @@ function openInfoPanel(latlng, features, options = {}) {
               ${renderFieldIndented("Transit & Anchor Rules", getVal(props, "Rules_Transit_Anchor"), false, false, true)}
             </div>
 
-            <div id="laws-${uid}" class="tab-pane" style="display:none;">
-              ${getVal(props, "HAR_Name") ? `<div><strong>HAR Name:</strong> ${getVal(props, "HAR_Name")}</div>` : ""}
+            <div id="laws-${uid}" class="tab-pane field-stack" style="display:none;">
+              ${renderFieldIndented("HAR Name", getVal(props, "HAR_Name"))}
               ${getVal(props, "HAR_Link") ? `<a class="reg-link" href="${getVal(props, "HAR_Link")}" target="_blank">VIEW HAR PDF ›</a>` : ""}
               ${renderFieldIndented("Penalties", getVal(props, "Penalties"), true)}
             </div>
