@@ -123,13 +123,14 @@ const formatRuleText = (text) => {
 
   const lines = String(text)
     .replace(/\r\n?/g, "\n")
+    .replace(/([^\n])\s+(?=(?:Allowed|Prohibited)[^:\n]*:\s*)/gi, "$1\n")
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
 
   return lines
     .map((line) => {
-      const match = line.match(/^(Prohibited[^:]*:|Allowed[^:]*:)(.*)$/i);
+      const match = line.match(/^(?:[-•]\s*)?(Prohibited[^:]*:|Allowed[^:]*:)(.*)$/i);
       if (!match) return formatRuleBody(line);
 
       const [, label, body] = match;
