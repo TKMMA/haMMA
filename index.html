@@ -3,59 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hawaii Regulated Areas Map</title>
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <title>Hawaiʻi Marine & Freshwater Managed Areas</title>
+  <meta name="description" content="Interactive map of Hawaii's managed marine and freshwater areas, maintained by the Division of Aquatic Resources." />
+
+  <meta property="og:title" content="Hawaiʻi Marine & Freshwater Managed Areas" />
+  <meta property="og:description" content="Interactive map of Hawaii's managed marine and freshwater areas." />
+  <meta property="og:type" content="website" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="map-interface">
-    <div class="brand-panel" id="brand-panel">
-      <div class="brand-header">
-        <div class="brand-side-label">Division of Aquatic Resources</div>
-        <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="DAR logo" />
-        <div class="brand-title-block">
-          <h2 class="brand-title-main">Managed Areas</h2>
-          <div class="brand-title-sub">Marine and Freshwater</div>
-        </div>
-        <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaii logo" />
-        <div class="brand-side-label">State of Hawaiʻi</div>
-      </div>
-    </div>
+    <div class="pane-stage" id="pane-stage">
+      <aside id="map-sidebar" class="map-sidebar sheet-panel" role="complementary" aria-label="Marine and freshwater areas list">
 
-    <div class="pane-stage is-minimized" id="pane-stage">
-      <aside id="map-sidebar" class="map-sidebar" role="complementary" aria-label="Areas List">
+        <!-- Brand panel doubles as mobile drag surface -->
+        <header class="brand-panel" id="brand-panel" role="banner">
+          <div class="sheet-banner__drag-zone" id="list-drag-zone" aria-hidden="true">
+            <div class="sheet-banner__grip"></div>
+          </div>
+          <div class="brand-header brand-header--compact">
+            <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-dar.png" alt="Division of Aquatic Resources logo" width="36" height="36" />
+            <div class="brand-title-block"><h1 class="brand-title-main">Managed Areas</h1></div>
+            <img class="brand-logo" src="https://devdar.rapidteksolutions.com/wp-content/themes/react-ts-theme/assets/img/logo-state-of-hawai.png" alt="State of Hawaiʻi logo" width="36" height="36" />
+          </div>
+        </header>
+
         <div class="sidebar-search-wrap">
           <div class="search-input-wrapper">
-            <input
-              type="text"
-              id="area-search"
-              placeholder="Search areas..."
-              onkeyup="filterSidebar()"
-              autocomplete="off"
-              spellcheck="false"
-              aria-label="Search through marine areas"
-            />
-            <button class="search-clear-btn" type="button" aria-label="Clear search" title="Clear search" onclick="clearSidebarSearch()">✕</button>
+            <label for="area-search" class="sr-only">Search marine and freshwater areas</label>
+            <input type="text" id="area-search" placeholder="Search areas…" autocomplete="off" spellcheck="false" aria-controls="island-list" />
+            <button class="search-clear-btn" type="button" aria-label="Clear search" id="search-clear-btn">✕</button>
             <span class="search-icon" aria-hidden="true">🔍</span>
           </div>
         </div>
 
-        <div id="island-list" class="island-list">
-          <div id="loading-notice" class="loading-notice">Loading Marine Areas...</div>
+        <div id="island-list" class="island-list" role="list" aria-label="Areas grouped by island" aria-live="polite" aria-busy="true">
+          <div id="loading-notice" class="loading-notice" role="status">Loading marine areas…</div>
         </div>
       </aside>
 
-      <aside id="info-sidebar" class="info-sidebar" role="region" aria-label="Area Details">
-        <button onclick="clearMapSelection()" class="close-info-btn" title="Close Area Info" aria-label="Close Area Info" type="button">✕</button>
+      <aside id="info-sidebar" class="info-sidebar sheet-panel" role="region" aria-label="Area details" aria-live="polite">
+
+        <!-- Desktop header — title only -->
+        <div class="info-panel-header" id="info-panel-header">
+          <span class="info-panel-header__title" id="info-banner-title" aria-live="polite">Area Info</span>
+        </div>
+
+        <!-- Mobile header — protruding drag tab above, back + title row below -->
+        <div class="info-mobile-header" id="info-banner">
+          <div class="sheet-banner__drag-zone" id="info-drag-zone" aria-hidden="true">
+            <div class="sheet-banner__grip"></div>
+          </div>
+          <div class="info-mobile-header__row">
+            <button class="info-mobile-header__back" id="info-back-btn"
+              type="button" aria-label="Back to areas list">← Areas List</button>
+            <span class="info-mobile-header__title" id="info-banner-title-mobile">Area Info</span>
+          </div>
+        </div>
+
         <div id="info-content" class="info-content"></div>
       </aside>
     </div>
 
-    <div id="map"></div>
+    <div id="map" role="application" aria-label="Interactive map of Hawaii managed areas"></div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="script.js"></script>
 </body>
 </html>
