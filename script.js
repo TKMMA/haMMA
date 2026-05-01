@@ -57,6 +57,68 @@
   //   'rule'    — rule text with Allowed/Prohibited callouts
   //   'link'    — renders as a .reg-link button; requires linkText
   //   'join'    — joins multiple keys with <br>; requires keys[]
+  // ── NEW STRUCTURED RULES SCHEMA ─────────────────────────────
+  // Each category has Prohibited / Allowed / Limited sub-fields.
+  // Status is encoded in the field name — no parsing needed.
+  // The app reads new fields first; falls back to old blob fields
+  // for any area not yet migrated.
+  const RULES_CATEGORIES = [
+    {
+      key:    'Gear',
+      label:  'Gear Rules',
+      fields: {
+        prohibited: 'Rules_Gear_Prohibited',
+        allowed:    'Rules_Gear_Allowed',
+        limited:    'Rules_Gear_Limited',
+      },
+    },
+    {
+      key:    'Species',
+      label:  'Species & Bag Limits',
+      fields: {
+        prohibited: 'Rules_Species_Prohibited',
+        allowed:    'Rules_Species_Allowed',
+        limited:    'Rules_Species_Limited',
+      },
+    },
+    {
+      key:    'Activities',
+      label:  'Activities Rules',
+      fields: {
+        prohibited: 'Rules_Activities_Prohibited',
+        allowed:    'Rules_Activities_Allowed',
+        limited:    'Rules_Activities_Limited',
+        notes:      'Rules_Activities_Notes',
+      },
+    },
+    {
+      key:    'Seasons',
+      label:  'Seasons & Times',
+      fields: {
+        prohibited: 'Rules_Seasons_Prohibited',
+        allowed:    'Rules_Seasons_Allowed',
+        limited:    'Rules_Seasons_Limited',
+      },
+    },
+    {
+      key:    'Transit',
+      label:  'Transit & Anchor',
+      fields: {
+        prohibited: 'Rules_Transit_Prohibited',
+        allowed:    'Rules_Transit_Allowed',
+        notes:      'Rules_Transit_Notes',
+      },
+    },
+  ];
+
+  // Status display config — label, colour class, rendered header
+  const RULE_STATUS = {
+    prohibited: { label: 'Prohibited',          cls: 'rule-status--prohibited' },
+    allowed:    { label: 'Allowed',              cls: 'rule-status--allowed'    },
+    limited:    { label: 'Allowed with limits',  cls: 'rule-status--limited'    },
+    notes:      { label: 'Notes',                cls: 'rule-status--notes'      },
+  };
+
   const FIELD_SCHEMA = {
     about: [
       {
@@ -73,11 +135,12 @@
       { key: 'DAR_URL',        label: 'Official DAR Page', format: 'link',  linkText: 'Official DAR page ›' },
     ],
     rules: [
+      // Kept for legacy fallback rendering — new rendering uses RULES_CATEGORIES
       { key: 'Rules_Gear',             label: 'Gear Rules',           format: 'rule' },
-      { key: 'Rules_Species_Size_Bag', label: 'Species & Bag Limits', format: 'rule' },
+      { key: 'Rules_species_size_bag', label: 'Species & Bag Limits', format: 'rule' },
       { key: 'Rules_Activities',       label: 'Activities Rules',     format: 'rule' },
       { key: 'Rules_Seasons_Times',    label: 'Seasons & Times',      format: 'rule' },
-      { key: 'Rules_Transit_Anchor',   label: 'Transit & Anchor',     format: 'rule' },
+      { key: 'Rules_transit_anchor',   label: 'Transit & Anchor',     format: 'rule' },
     ],
     laws: [
       { key: 'HAR_Name',  label: 'HAR Name' },
@@ -94,19 +157,8 @@
     ],
   };
 
-  // Summary card pulls from the rules tab fields — driven by schema so it
-  // stays in sync automatically if rules fields are ever added or reordered.
-  const SUMMARY_SCHEMA = FIELD_SCHEMA.rules.map((f) => ({
-    title:    f.label,
-    fieldKey: f.key,
-  }));
-  const SUMMARY_GROUP_ORDER = ['prohibited', 'allowed', 'limited', 'other'];
-  const SUMMARY_GROUP_LABELS = {
-    prohibited: 'Prohibited',
-    allowed: 'Allowed',
-    limited: 'Allowed with limits',
-    other: 'Other / notes',
-  };
+  // SUMMARY_SCHEMA — driven from RULES_CATEGORIES so it stays in sync
+  const SUMMARY_SCHEMA = RULES_CATEGORIES;
 
 
 
@@ -317,41 +369,6 @@
       .toLowerCase();
   }
 
-  function getAreaImages(feature) {
-    const props = feature?.properties || {};
-    const areaName = getFeatureName(props) || 'Managed area';
-    // TODO: Replace/augment this placeholder field mapping with ArcGIS
-    // attachment retrieval later. Keep returning this same normalized shape
-    // so carousel/card renderers do not need to change.
-    return ['Area_Image_URL_1', 'Area_Image_URL_2', 'Area_Image_URL_3']
-      .map((key) => getSafeUrl(getVal(props, key)))
-      .filter(Boolean)
-      .map((url) => ({
-        url,
-        alt: areaName,
-        caption: '',
-      }));
-  }
-
-
-  function buildSummarySources(features) {
-    return features.map((feature, index) => ({
-      id: index + 1,
-      feature,
-      name: getFeatureName(feature.properties),
-      className: `source-chip--${(index % 8) + 1}`,
-    }));
-  }
-
-  function renderSourceChip(source) {
-    return `<span class="source-chip ${source.className}" title="Source ${source.id}: ${escapeHtml(source.name)}" aria-label="Source ${source.id}: ${escapeHtml(source.name)}">
-      <span class="sr-only">Source </span>${source.id}
-    </span>`;
-  }
-
-  function renderSourceChips(sources) {
-    return sources.map((s) => renderSourceChip(s)).join('');
-  }
 
 
   function getAreaImages(feature) {
@@ -371,78 +388,8 @@
   }
 
 
-  function buildSummarySources(features) {
-    return features.map((feature, index) => ({
-      id: index + 1,
-      feature,
-      name: getFeatureName(feature.properties),
-      className: `source-chip--${(index % 8) + 1}`,
-    }));
-  }
-
-  function renderSourceChip(source) {
-    return `<span class="source-chip ${source.className}" title="Source ${source.id}: ${escapeHtml(source.name)}" aria-label="Source ${source.id}: ${escapeHtml(source.name)}">
-      <span class="sr-only">Source </span>${source.id}
-    </span>`;
-  }
-
-  function renderSourceChips(sources) {
-    return sources.map((s) => renderSourceChip(s)).join('');
-  }
 
 
-  function getAreaImages(feature) {
-    const props = feature?.properties || {};
-    const areaName = getFeatureName(props) || 'Managed area';
-    // TODO: Replace/augment this placeholder field mapping with ArcGIS
-    // attachment retrieval later. Keep returning this same normalized shape
-    // so carousel/card renderers do not need to change.
-    return ['Area_Image_URL_1', 'Area_Image_URL_2', 'Area_Image_URL_3']
-      .map((key) => getSafeUrl(getVal(props, key)))
-      .filter(Boolean)
-      .map((url) => ({
-        url,
-        alt: areaName,
-        caption: '',
-      }));
-  }
-
-
-  function buildSummarySources(features) {
-    return features.map((feature, index) => ({
-      id: index + 1,
-      feature,
-      name: getFeatureName(feature.properties),
-      className: `source-chip--${(index % 8) + 1}`,
-    }));
-  }
-
-  function renderSourceChip(source) {
-    return `<span class="source-chip ${source.className}" title="Source ${source.id}: ${escapeHtml(source.name)}" aria-label="Source ${source.id}: ${escapeHtml(source.name)}">
-      <span class="sr-only">Source </span>${source.id}
-    </span>`;
-  }
-
-  function renderSourceChips(sources) {
-    return sources.map((s) => renderSourceChip(s)).join('');
-  }
-
-
-  function getAreaImages(feature) {
-    const props = feature?.properties || {};
-    const areaName = getFeatureName(props) || 'Managed area';
-    // TODO: Replace/augment this placeholder field mapping with ArcGIS
-    // attachment retrieval later. Keep returning this same normalized shape
-    // so carousel/card renderers do not need to change.
-    return ['Area_Image_URL_1', 'Area_Image_URL_2', 'Area_Image_URL_3']
-      .map((key) => getSafeUrl(getVal(props, key)))
-      .filter(Boolean)
-      .map((url) => ({
-        url,
-        alt: areaName,
-        caption: '',
-      }));
-  }
 
 
   // ── 5. MAP INITIALISATION ────────────────────────────────────
@@ -621,10 +568,13 @@
   function setInitialMapExtent() {
     if (!map) return;
     if (isMobileView()) {
+      // On mobile, the list sheet covers ~50% of the screen from the bottom.
+      // Increase bottom padding significantly so the island chain sits in the
+      // visible top half of the screen on load.
       map.fitBounds(INITIAL_CHAIN_BOUNDS, {
-        paddingTopLeft:     [12, 70],
-        paddingBottomRight: [12, 30],
-        maxZoom: 8.5,
+        paddingTopLeft:     [12, 40],
+        paddingBottomRight: [12, 260],
+        maxZoom: 7.8,
       });
       return;
     }
@@ -652,10 +602,16 @@
     if (!isMobileView() || !paneStageEl) return;
     if (_drag) return;
     // Don't intercept taps on interactive children (e.g. the back button).
-    // If the touch originated on a button or anchor, let the click fire.
+    // Check both the event target and the element at the touch coordinates,
+    // since on iOS the target can be the container rather than the child.
     const firstTouch = (e.touches || [e])[0];
-    if (firstTouch?.target?.closest('button, a')) return;
-    e.preventDefault();
+    const targetEl   = firstTouch
+      ? (document.elementFromPoint(firstTouch.clientX, firstTouch.clientY) || firstTouch.target)
+      : e.target;
+    if (targetEl?.closest('button, a')) return;
+    // Do NOT preventDefault here — we don't know yet if this is a drag or scroll.
+    // preventDefault is called in onBannerDragMove only after a clear vertical drag
+    // is confirmed, which is what keeps the list scrollable.
 
     const touch = (e.touches || [e])[0];
 
@@ -668,6 +624,7 @@
 
     _drag = {
       panel,
+      startX:   touch.clientX,
       startY:   touch.clientY,
       baseY:    currentY,
       currentX,
@@ -679,9 +636,13 @@
 
   function onBannerDragMove(e) {
     if (!_drag) return;
+    const touch    = (e.touches || [e])[0];
+    const absDeltaY = Math.abs((touch?.clientY || 0) - _drag.startY);
+    const absDeltaX = Math.abs((touch?.clientX || 0) - (_drag.startX || touch?.clientX || 0));
+    // Only hijack scroll after a clear vertical drag (> 6px vertical, not mostly horizontal)
+    if (absDeltaY < 6 || absDeltaX > absDeltaY * 1.5) return;
     e.preventDefault();
 
-    const touch    = (e.touches || [e])[0];
     const deltaY   = touch.clientY - _drag.startY;
     const rawY     = _drag.baseY + deltaY;
 
@@ -702,7 +663,6 @@
 
   function onBannerDragEnd(e) {
     if (!_drag) return;
-    if (e) e.preventDefault();
 
     const currentY   = _drag.lastY;
     const velocity   = _drag.velocity;
@@ -729,7 +689,7 @@
   function wireSheetBannerDrag(zoneId, panel, opts = {}) {
     const zone = document.getElementById(zoneId);
     if (!zone) return;
-    zone.addEventListener('touchstart',  (e) => onBannerDragStart(e, panel), { passive: false });
+    zone.addEventListener('touchstart',  (e) => onBannerDragStart(e, panel), { passive: true });
     zone.addEventListener('touchmove',   onBannerDragMove,  { passive: false });
     zone.addEventListener('touchend',    onBannerDragEnd,   { passive: false });
     zone.addEventListener('touchcancel', onBannerDragEnd,   { passive: false });
@@ -1029,6 +989,34 @@
     }, 1200);
   }
 
+  // Flash a polygon by area name without any map movement or selection change.
+  // Used by the source legend buttons in the summary card.
+  // Auto-reverts to base style after 1.8s — doesn't affect active selection.
+  function flashFeatureByName(areaName) {
+    let found = false;
+    Object.values(allIslandLayers).forEach((group) => {
+      if (found) return;
+      group.eachLayer((layer) => {
+        if (found) return;
+        if (getFeatureName(layer.feature.properties) !== areaName) return;
+        found = true;
+        if (typeof layer.setStyle !== 'function') return;
+        const base = getLayerBaseStyle(layer);
+        // Flash bright without touching activeAccordionLayer
+        layer.setStyle({ color: '#ffe066', weight: 5, opacity: 1, fillOpacity: base.fillOpacity });
+        setTimeout(() => {
+          layer.setStyle({ color: '#ffd60a', weight: Math.max(base.weight + 0.8, 2.2), opacity: 1, fillOpacity: base.fillOpacity });
+          setTimeout(() => {
+            // Revert to base — but respect active selection if it's this layer
+            if (activeAccordionLayer !== layer) {
+              layer.setStyle(base);
+            }
+          }, 1200);
+        }, 300);
+      });
+    });
+  }
+
   function updateClickMarker(latlng) {
     if (activeSelectionMarker) map.removeLayer(activeSelectionMarker);
     activeSelectionMarker = L.marker(latlng).addTo(map);
@@ -1113,53 +1101,225 @@
       </div>`;
   }
 
-  // Render all fields for a given tab from the schema
+  // Render all fields for a given tab from the schema (used by About and Laws tabs)
   function renderTab(tabKey, props) {
     return (FIELD_SCHEMA[tabKey] || [])
       .map((entry) => renderSchemaField(entry, props))
       .join('');
   }
 
+  // ── NEW STRUCTURED RULES RENDERING ───────────────────────────
+  // Renders a single status block (Prohibited / Allowed / Limited / Notes)
+  function renderRuleStatusBlock(statusKey, text) {
+    if (!text || !text.trim()) return '';
+    const status = RULE_STATUS[statusKey];
+    if (!status) return '';
+    const lines = text.trim().split('\n').filter(Boolean);
+    const itemsHtml = lines.map((line) => {
+      // Strip leading dash if present
+      const clean = line.replace(/^[-•]\s*/, '').trim();
+      return clean ? `<li class="rule-item">${escapeHtml(clean)}</li>` : '';
+    }).join('');
+    return `
+      <div class="rule-status-block ${status.cls}">
+        <div class="rule-status-block__header">${status.label}</div>
+        <ul class="rule-item-list">${itemsHtml}</ul>
+      </div>`;
+  }
+
+  // Check if any new structured fields are populated for a category
+  function categoryHasNewFields(category, props) {
+    return Object.values(category.fields).some((fieldKey) => {
+      const val = getVal(props, fieldKey);
+      return val && val.trim();
+    });
+  }
+
+  // Render one rules category (e.g. Gear Rules) for an area card
+  function renderRulesCategory(category, props) {
+    const blocksHtml = Object.entries(category.fields)
+      .map(([statusKey, fieldKey]) => {
+        const val = getVal(props, fieldKey);
+        return renderRuleStatusBlock(statusKey, val);
+      })
+      .join('');
+    if (!blocksHtml.trim()) return '';
+    return `
+      <div class="rules-category">
+        <div class="rules-category__title">${category.label}</div>
+        ${blocksHtml}
+      </div>`;
+  }
+
+  // Render the full Rules tab for an area card
+  function renderRulesTab(props) {
+    const html = RULES_CATEGORIES
+      .map((cat) => renderRulesCategory(cat, props))
+      .join('');
+    return html.trim()
+      ? html
+      : '<p class="rules-empty">No specific rules on record for this area.</p>';
+  }
+
+  // ── SUMMARY CARD — NEW STRUCTURED RENDERING ──────────────────
+  // Renders one status block for a single source area within the summary
+  function renderSummaryStatusBlock(statusKey, text, source) {
+    if (!text || !text.trim()) return '';
+    const status = RULE_STATUS[statusKey];
+    if (!status) return '';
+    const lines = text.trim().split('\n').filter(Boolean);
+    const itemsHtml = lines.map((line) => {
+      const clean = line.replace(/^[-•]\s*/, '').trim();
+      return clean ? `<li class="rule-item">${escapeHtml(clean)}</li>` : '';
+    }).join('');
+    return `
+      <div class="summary-status-entry">
+        <div class="summary-status-entry__header">
+          <span class="rule-status-label ${status.cls}">${status.label}</span>
+          ${renderSourceChip(source)}
+        </div>
+        <ul class="rule-item-list">${itemsHtml}</ul>
+      </div>`;
+  }
+
+  // ── SUMMARY CARD — FIELD-FIRST LAYOUT ───────────────────────
+  //
+  // Layout: for each category (Gear, Species, etc.) group entries by
+  // status (Prohibited, Allowed, Limited, Notes). Within each status
+  // group, list all sources that have content, each with their chip.
+  // Transit_Notes are deduplicated — if multiple sources share the same
+  // note (very common boilerplate), it is shown once.
+
+  // Normalise a string for deduplication comparison
+  function _normaliseNote(text) {
+    return text.replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
   function buildCombinedRulesSummary(features) {
     const sources = buildSummarySources(features);
-    const categories = SUMMARY_SCHEMA
-      .map((schemaRow) => {
-        const entries = sources
-          .map((source) => ({
-            source,
-            value: getVal(source.feature.properties, schemaRow.fieldKey),
-          }))
-          .filter((e) => e.value);
-        return { title: schemaRow.title, entries };
-      })
-      .filter((category) => category.entries.length > 0);
+
+    // For each category → each status → collect { source, text } entries
+    const categories = RULES_CATEGORIES.map((category) => {
+      // Build a map: statusKey → [ { source, text } ]
+      const statusMap = {};
+      Object.keys(category.fields).forEach((sk) => { statusMap[sk] = []; });
+
+      sources.forEach((source) => {
+        const props = source.feature.properties;
+        Object.entries(category.fields).forEach(([statusKey, fieldKey]) => {
+          const val = (getVal(props, fieldKey) || '').trim();
+          if (val) statusMap[statusKey].push({ source, text: val });
+        });
+      });
+
+      // Deduplicate across ALL status types:
+      // If multiple sources share identical text for the same status,
+      // collapse them to a single entry showing all chips side-by-side.
+      Object.keys(statusMap).forEach((sk) => {
+        const entries = statusMap[sk];
+        if (entries.length < 2) return;
+
+        // Group entries by normalised text
+        const groups = {};
+        entries.forEach((e) => {
+          const key = _normaliseNote(e.text);
+          if (!groups[key]) groups[key] = { text: e.text, sources: [] };
+          groups[key].sources.push(e.source);
+        });
+
+        // Rebuild: collapsed where all sources share text, expanded otherwise
+        statusMap[sk] = Object.values(groups).map(({ text, sources }) =>
+          sources.length === 1
+            ? { source: sources[0], text }
+            : { source: null, sources, text }
+        );
+      });
+
+      // Only include category if at least one status has entries
+      const hasContent = Object.values(statusMap).some((entries) => entries.length > 0);
+      return hasContent ? { category, statusMap } : null;
+    }).filter(Boolean);
+
     return { sources, categories };
+  }
+
+  // Render a single status group within the summary card
+  // e.g. "Prohibited" header, then each source's chip + bullet list
+  function renderSummaryStatusGroup(statusKey, entries) {
+    if (!entries || !entries.length) return '';
+    const status = RULE_STATUS[statusKey];
+    if (!status) return '';
+
+    const entriesHtml = entries.map(({ source, sources: multiSources, text }) => {
+      // Chip: either a single source chip or a row of chips (deduplicated notes)
+      const chipHtml = multiSources
+        ? multiSources.map((s) => renderSourceChip(s)).join('')
+        : renderSourceChip(source);
+
+      const lines = text.split('\n').filter(Boolean);
+      // Chips go at the END of each bullet line
+      const itemsHtml = lines.map((line, idx) => {
+        const clean = line.replace(/^[-•]\s*/, '').trim();
+        if (!clean) return '';
+        // Only attach chips to the last line — keeps multi-line entries clean
+        const chipsAtEnd = idx === lines.length - 1
+          ? `<span class="rule-item__chips">${chipHtml}</span>`
+          : '';
+        return `<li class="rule-item">${escapeHtml(clean)}${chipsAtEnd}</li>`;
+      }).join('');
+
+      return `
+        <div class="summary-field-entry">
+          <ul class="rule-item-list rule-item-list--chipped">${itemsHtml}</ul>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="summary-status-group">
+        <div class="summary-status-group__header rule-status-label ${status.cls}">
+          ${status.label}
+        </div>
+        ${entriesHtml}
+      </div>`;
   }
 
   function buildSummaryPanel(features) {
     const summary = buildCombinedRulesSummary(features);
     const hasRules = summary.categories.length > 0;
+
+    // Source legend: each area is a pill-button that flashes its polygon
+    const legendHtml = summary.sources.map((source) => `
+      <button
+        class="summary-source-pill"
+        type="button"
+        data-flash-area="${escapeHtml(source.name)}"
+        title="Tap to highlight ${escapeHtml(source.name)} on the map"
+        aria-label="Highlight ${escapeHtml(source.name)} on map"
+      >
+        ${renderSourceChip(source)}
+        <span class="summary-source-pill__name">${escapeHtml(source.name)}</span>
+      </button>`).join('');
+
     return `
       <div class="summary-accordion__panel--inline" hidden>
         <div class="mmcard mmcard--summary overlap-summary-card">
           <div class="mmcard__body overlap-summary-intro">
             <div class="summary-card-label">Combined rules summary</div>
-            <p class="summary-explainer">Rules are reorganized by category and status. Source chips indicate which selected area each rule line came from.</p>
-            <div class="summary-source-legend overlap-source-list">
-              <div class="summary-source-legend__label">Areas included:</div>
-              <ul class="summary-area-list">${summary.sources.map((source) => `<li class="summary-area-name overlap-source-item">${renderSourceChip(source)} ${escapeHtml(source.name)}</li>`).join('')}</ul>
+            <div class="summary-source-legend">
+              <div class="summary-source-legend__label">Tap an area to highlight it on the map:</div>
+              <div class="summary-source-pills">${legendHtml}</div>
             </div>
-            ${hasRules ? `<div class="summary-field-stack">
-              ${summary.categories.map((category) => `
-                <div class="summary-field-block">
-                  <div class="summary-section-title">${escapeHtml(category.title)}</div>
-                  ${category.entries.map((entry) => `
-                    <div class="summary-rule-entry">
-                      <div class="summary-rule-entry__chip">${renderSourceChip(entry.source)}</div>
-                      <div class="summary-rule-entry__text">${formatRuleText(entry.value)}</div>
+            ${hasRules
+              ? `<div class="summary-field-stack">
+                  ${summary.categories.map(({ category, statusMap }) => `
+                    <div class="summary-field-block">
+                      <div class="summary-section-title">${escapeHtml(category.label)}</div>
+                      ${Object.entries(statusMap)
+                          .map(([sk, entries]) => renderSummaryStatusGroup(sk, entries))
+                          .join('')}
                     </div>`).join('')}
-                </div>`).join('')}
-            </div>` : `<p class="summary-empty">No combined rule text is available for these selected areas.</p>`}
+                </div>`
+              : `<p class="summary-empty">No rules on record for these areas.</p>`}
           </div>
         </div>
       </div>`;
@@ -1226,7 +1386,7 @@
           </div>
 
           <div id="rules-${uid}" class="tab-pane field-stack">
-            ${renderTab('rules', props)}
+            ${renderRulesTab(props)}
           </div>
 
           <div id="laws-${uid}" class="tab-pane field-stack" hidden>
@@ -1247,12 +1407,8 @@
   }
 
   function renderOverlapHeader(features) {
-    const count = features.length;
-    return `
-      <div class="overlap-context">
-        <h3 class="overlap-context__title">${count} overlapping areas selected</h3>
-        <p class="overlap-context__copy">Review the combined summary first, then use the source cards below for original rule text.</p>
-      </div>`;
+    // Intentionally empty — renderAreaSpecificSection has its own title
+    return '';
   }
 
   function renderAreaSpecificSection(features) {
@@ -1276,9 +1432,10 @@
           data-area-count="${count}"
         >
           <span class="mmpopup__summary-banner__cta">
-            <span class="mmpopup__summary-trigger-label">Combined rules summary</span>
-            <span class="mmpopup__summary-trigger-help">Multiple regulated areas overlap here. Expand this summary to review rules reorganized by activity.</span>
-            <span class="mmpopup__summary-trigger-chevron" aria-hidden="true">▼</span>
+            <span class="mmpopup__summary-trigger-pill">
+              <span class="mmpopup__summary-trigger-pill-text">See combined rules for all ${count} areas</span>
+              <span class="mmpopup__summary-trigger-chevron" aria-hidden="true">▼</span>
+            </span>
           </span>
         </button>
         <div class="mmpopup__scroll">
@@ -1305,6 +1462,14 @@
   function setSummaryExpanded(btn, expand) {
     if (!btn) return;
     btn.setAttribute('aria-expanded', String(expand));
+    // Update pill label to match state
+    const pillText = btn.querySelector('.mmpopup__summary-trigger-pill-text');
+    if (pillText) {
+      const count = btn.dataset.areaCount || '';
+      pillText.textContent = expand
+        ? 'Hide combined rules'
+        : `See combined rules for all ${count} areas`;
+    }
 
     const scroll = btn.closest('.mmpopup')?.querySelector('.mmpopup__scroll');
     const panel  = scroll?.querySelector('.summary-accordion__panel--inline');
@@ -1339,12 +1504,8 @@
       panel.addEventListener('transitionend', onEnd);
     }
 
-    const label = btn.querySelector('.mmpopup__summary-trigger-label');
-    if (label) {
-      label.textContent = expand
-        ? 'Hide combined rules summary'
-        : 'Combined rules summary';
-    }
+    // label shows area count — stays static; pill text handles state
+
   }
 
   function toggleSummaryAccordion(btn) {
@@ -1379,6 +1540,7 @@
     const mobileTitle  = document.getElementById('info-banner-title-mobile');
     if (desktopTitle) desktopTitle.textContent = panelTitle;
     if (mobileTitle)  mobileTitle.textContent  = panelTitle;
+
 
     if (isMobileView()) {
       applyMobileState('info-half');
@@ -1892,6 +2054,13 @@
     }
 
     // Summary accordion
+    // Source legend pill → flash polygon (no map movement)
+    const flashPill = e.target.closest('[data-flash-area]');
+    if (flashPill) {
+      flashFeatureByName(flashPill.dataset.flashArea);
+      return;
+    }
+
     const accordionToggle = e.target.closest('[data-action="toggle-summary"]');
     if (accordionToggle) {
       toggleSummaryAccordion(accordionToggle);
