@@ -58,10 +58,10 @@
   --font-mono: 'JetBrains Mono', 'Fira Mono', monospace;
 
   /* Sizing */
-  --sidebar-width:         320px;
-  --info-panel-width:      var(--sidebar-width);
-  --panel-margin:          15px;
-  --panel-gap:             calc(var(--panel-margin) + 12px);
+  --sidebar-width:         260px;
+  --info-panel-width:      300px;
+  --panel-margin:          12px;
+  --panel-gap:             8px;
   --top-band-height:       50px;
   --sheet-handle-height:   48px;
   --border-radius-sm:      6px;
@@ -361,7 +361,7 @@ a {
 .header-left {
   display: flex;
   align-items: center;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: 0.01em;
@@ -385,8 +385,8 @@ a {
 .area-list.active { display: block; }
 
 .area-item {
-  padding: 9px 14px 9px 38px;
-  font-size: 13px;
+  padding: 7px 12px 7px 34px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   border-bottom: 1px solid var(--color-border-light);
   cursor: pointer;
@@ -551,49 +551,61 @@ a {
   outline-offset: -3px;
 }
 
-/* Single-row CTA — count + action + chevron */
 .mmpopup__summary-banner__cta {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px 14px;
+  gap: 0;
+  padding: 10px 14px;
   background: linear-gradient(135deg, var(--color-brand-darkest), var(--color-brand-mid));
   transition: filter var(--duration-fast);
 }
 
 .mmpopup__summary-banner:hover .mmpopup__summary-banner__cta {
-  filter: brightness(1.12);
+  filter: brightness(1.1);
 }
 
-.mmpopup__summary-trigger-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #ffffff;
-  line-height: 1.35;
+/* Pill CTA button — "See combined rules ▼" */
+.mmpopup__summary-trigger-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 999px;
+  padding: 5px 12px 5px 12px;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
-.mmpopup__summary-trigger-help {
+
+.mmpopup__summary-banner:hover .mmpopup__summary-trigger-pill {
+  background: rgba(255,255,255,0.28);
+  border-color: rgba(255,255,255,0.55);
+}
+
+.mmpopup__summary-trigger-pill-text {
   font-size: 11px;
-  color: rgba(255,255,255,0.88);
-  line-height: 1.4;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .mmpopup__summary-trigger-chevron {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 11px;
-  color: rgba(255,255,255,0.85);
-  transition: transform 0.25s ease, translate 0.25s ease;
+  font-size: 9px;
+  color: rgba(255,255,255,0.9);
+  transition: transform 0.25s ease;
   flex-shrink: 0;
+  line-height: 1;
 }
 
-/* Rotate chevron when expanded */
+/* Rotate chevron and update pill text when expanded */
 .mmpopup__summary-banner[aria-expanded="true"] .mmpopup__summary-trigger-chevron {
   transform: rotate(180deg);
+}
+
+/* Update pill label when expanded — handled via JS attr */
+.mmpopup__summary-banner[aria-expanded="true"] .mmpopup__summary-trigger-pill-text {
+  /* text updated by JS to "Hide combined rules" */
 }
 
 /* Summary panel — drops below banner, same gradient for visual continuity */
@@ -734,16 +746,19 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
+  min-width: 16px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--chip-color, #275DAD);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 700;
   line-height: 1;
   flex-shrink: 0;
-  border: 1px solid rgba(255,255,255,0.35);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  /* Align chip to first line of adjacent text */
+  margin-top: 2px;
 }
 .source-chip--1 { background: #275DAD; }
 .source-chip--2 { background: #A741E0; }
@@ -1301,6 +1316,20 @@ a {
   }
 
   /* Drag zone is only the protruding tab — back button row is never covered */
+  /* Summary banner on mobile — sticky so it stays visible while scrolling,
+     and pill centered */
+  .mmpopup__summary-banner {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .mmpopup__summary-banner__cta {
+    align-items: center;
+    padding: 8px 14px;
+  }
+
   .info-mobile-header .sheet-banner__drag-zone {
     position: absolute;
     top: calc(-1 * var(--sheet-tab-h));
@@ -1359,8 +1388,9 @@ a {
   .info-mobile-header__back:hover { color: #fff; }
 
   .info-mobile-header__title {
-    flex: 1;
-    text-align: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -1369,6 +1399,8 @@ a {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    pointer-events: none;
+    max-width: 55%;
   }
 
   /* Grip lines */
@@ -1443,4 +1475,361 @@ a {
 
 @media (max-width: 768px) {
   .info-sidebar > .brand-panel--info { display: none; }
+}
+
+/* ── STRUCTURED RULES RENDERING ─────────────────────────────── */
+
+/* Category block in area cards */
+.rules-category {
+  margin-bottom: 14px;
+}
+
+.rules-category:last-child {
+  margin-bottom: 0;
+}
+
+.rules-category__title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* Status block within a category */
+.rule-status-block {
+  margin-bottom: 8px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.rule-status-block:last-child {
+  margin-bottom: 0;
+}
+
+.rule-status-block__header {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+}
+
+/* Status colour themes */
+.rule-status--prohibited .rule-status-block__header {
+  background: #fdf0f0;
+  color: var(--color-prohibited);
+  border-left: 3px solid var(--color-prohibited);
+}
+
+.rule-status--allowed .rule-status-block__header {
+  background: #f0faf0;
+  color: var(--color-allowed);
+  border-left: 3px solid var(--color-allowed);
+}
+
+.rule-status--limited .rule-status-block__header {
+  background: #fffbf0;
+  color: #7a5c00;
+  border-left: 3px solid #e6a800;
+}
+
+.rule-status--notes .rule-status-block__header {
+  background: var(--color-surface-search);
+  color: var(--color-text-secondary);
+  border-left: 3px solid var(--color-border-mid);
+}
+
+/* Rule items list */
+.rule-item-list {
+  margin: 0;
+  padding: 6px 10px 6px 24px;
+  list-style: disc;
+}
+
+.rule-item {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  margin-bottom: 2px;
+}
+
+.rule-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Legacy fallback */
+.rules-category__legacy {
+  font-size: 12px;
+}
+
+/* Empty state */
+.rules-empty {
+  font-size: 12px;
+  color: var(--color-text-hint);
+  font-style: italic;
+}
+
+/* ── SUMMARY CARD — NEW STATUS ENTRIES ───────────────────────── */
+
+/* Each source's status block within the summary */
+.summary-status-entry {
+  margin-bottom: 8px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.summary-status-entry:last-child {
+  margin-bottom: 0;
+}
+
+.summary-status-entry__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+}
+
+/* Status label pill in summary */
+.rule-status-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: var(--border-radius-pill);
+}
+
+.rule-status-label.rule-status--prohibited {
+  background: rgba(160, 31, 31, 0.15);
+  color: #c0392b;
+}
+
+.rule-status-label.rule-status--allowed {
+  background: rgba(26, 107, 26, 0.15);
+  color: var(--color-allowed);
+}
+
+.rule-status-label.rule-status--limited {
+  background: rgba(230, 168, 0, 0.15);
+  color: #7a5c00;
+}
+
+.rule-status-label.rule-status--notes {
+  background: rgba(0,0,0,0.06);
+  color: var(--color-text-secondary);
+}
+
+/* Summary status entry items — white on dark summary card background */
+.mmcard--summary .rule-item {
+  color: rgba(255,255,255,0.9);
+}
+
+.mmcard--summary .summary-status-entry__header {
+  background: rgba(255,255,255,0.08);
+}
+
+.mmcard--summary .rule-status-label.rule-status--prohibited {
+  background: rgba(255,100,100,0.2);
+  color: #ffaaaa;
+}
+
+.mmcard--summary .rule-status-label.rule-status--allowed {
+  background: rgba(100,255,100,0.15);
+  color: #88dd88;
+}
+
+.mmcard--summary .rule-status-label.rule-status--limited {
+  background: rgba(255,220,80,0.18);
+  color: #ffd966;
+}
+
+.mmcard--summary .rule-status-label.rule-status--notes {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+}
+/* ── SUMMARY CARD — FIELD-FIRST LAYOUT ──────────────────────── */
+
+/* Status group within a summary category block */
+.summary-status-group {
+  margin-bottom: 10px;
+}
+
+.summary-status-group:last-child {
+  margin-bottom: 0;
+}
+
+.summary-status-group__header {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: var(--border-radius-pill);
+  margin-bottom: 6px;
+}
+
+/* Each source entry within a status group */
+.summary-field-entry {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px 0 4px 4px;
+  border-left: 2px solid rgba(255,255,255,0.1);
+  margin-bottom: 4px;
+}
+
+.summary-field-entry:last-child {
+  margin-bottom: 0;
+}
+
+.summary-field-entry__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  flex-shrink: 0;
+  padding-top: 1px;
+  min-width: 16px;
+}
+
+/* Rule items inside summary — white text on dark background */
+.mmcard--summary .rule-item-list {
+  padding-left: 16px;
+}
+
+.mmcard--summary .rule-item {
+  color: rgba(255,255,255,0.88);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Remove old summary-rule-entry styles that conflict */
+.summary-rule-entry { display: none; }
+/* ── SUMMARY SOURCE LEGEND — PILL BUTTONS ───────────────────── */
+
+.summary-source-legend__label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 8px;
+  font-style: italic;
+}
+
+.summary-source-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+.summary-source-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 999px;
+  padding: 5px 12px 5px 6px;
+  cursor: pointer;
+  font-family: var(--font);
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  width: 100%;
+}
+
+.summary-source-pill:hover,
+.summary-source-pill:focus-visible {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.3);
+  outline: none;
+}
+
+.summary-source-pill:active {
+  background: rgba(255,255,255,0.2);
+}
+
+.summary-source-pill__name {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.3;
+  flex: 1;
+}
+
+/* ── CHIPS AT END OF RULE BULLETS ───────────────────────────── */
+
+/* Rule items with chips at end */
+.rule-item-list--chipped .rule-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.rule-item__chips {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
+  align-items: center;
+  /* Nudge chips down to sit on the text baseline */
+  position: relative;
+  top: 1px;
+}
+
+/* Remove the old chip column layout — no longer needed */
+.summary-field-entry {
+  padding: 2px 0;
+}
+
+.summary-field-entry__chips {
+  display: none;
+}
+/* ── MOBILE SUMMARY PILL IN HEADER ──────────────────────────── */
+
+/* #mobile-summary-pill-slot positioning is in the mobile @media block */
+
+.mobile-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font);
+  color: #fff;
+  white-space: nowrap;
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+}
+
+.mobile-summary-pill:hover,
+.mobile-summary-pill:active {
+  background: rgba(255,255,255,0.25);
+}
+
+.mobile-summary-pill__text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mobile-summary-pill__chevron {
+  font-size: 8px;
+  transition: transform 0.2s ease;
+  line-height: 1;
+}
+
+/* Title always centered — pill slot positioned absolutely so it
+   doesn't affect the title's flex centering */
+#mobile-summary-pill-slot {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
 }
