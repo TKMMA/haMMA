@@ -38,7 +38,7 @@
     "Oʻahu", "Molokaʻi", "Maui", "Lānaʻi", "Kauaʻi", "Hawaiʻi Island", "Kahoʻolawe",
   ];
 
-  const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.9, -160.55], [22.35, -154.75]]);
+  const INITIAL_CHAIN_BOUNDS = L.latLngBounds([[18.9, -160.0], [22.35, -154.2]]);
 
   // Must match --duration-slow in style.css (400ms) + small buffer
   const SHEET_TRANSITION_MS = 420;
@@ -468,9 +468,9 @@
     const bh = 58; // --sheet-banner-h (brand panel / info header height)
     if (state === 'hidden')    return H * 0.92 - bh;
     if (state === 'list-open') return H * 0.50 - bh;
-    if (state === 'list-full') return H * 0.08;
+    if (state === 'list-full') return H * 0.03;       // near-full: grip tab still peeks
     if (state === 'info-half') return H * 0.50 - bh;
-    if (state === 'info-full') return H * 0.08;
+    if (state === 'info-full') return H * 0.22;       // 22% map visible for context
     return H * 0.92 - bh;
   }
 
@@ -572,9 +572,9 @@
       // Increase bottom padding significantly so the island chain sits in the
       // visible top half of the screen on load.
       map.fitBounds(INITIAL_CHAIN_BOUNDS, {
-        paddingTopLeft:     [12, 40],
-        paddingBottomRight: [12, 260],
-        maxZoom: 7.8,
+        paddingTopLeft:     [12, 30],
+        paddingBottomRight: [12, 320],
+        maxZoom: 8.3,
       });
       return;
     }
@@ -598,60 +598,65 @@
 
   let _drag = null; // active drag session
 
-  function onBannerDragStart(e, panel) {
-    if (!isMobileView() || !paneStageEl) return;
-    if (_drag) return;
-    // Don't intercept taps on interactive children (e.g. the back button).
-    // Check both the event target and the element at the touch coordinates,
-    // since on iOS the target can be the container rather than the child.
-    const firstTouch = (e.touches || [e])[0];
-    const targetEl   = firstTouch
-      ? (document.elementFromPoint(firstTouch.clientX, firstTouch.clientY) || firstTouch.target)
-      : e.target;
-    if (targetEl?.closest('button, a')) return;
-    // Do NOT preventDefault here — we don't know yet if this is a drag or scroll.
-    // preventDefault is called in onBannerDragMove only after a clear vertical drag
-    // is confirmed, which is what keeps the list scrollable.
+  // ── DRAG SYSTEM ──────────────────────────────────────────────
+  // Pattern: touchstart on banner zones (passive) records intent.
+  // A passive touchmove listener on document tracks position until
+  // a clear vertical drag is confirmed (>8px vertical, not horizontal).
+  // Only then do we add a non-passive listener to take full control.
+  // This guarantees scroll containers are never blocked until we are
+  // certain the user intends to drag the sheet.
 
-    const touch = (e.touches || [e])[0];
-
-    // Read current Y from computed matrix (may be mid-transition)
-    // Cancel transition first so we get the settled value
-    paneStageEl.classList.add('is-dragging');
-    const matrix   = new DOMMatrix(getComputedStyle(paneStageEl).transform);
-    const currentY = matrix.f;
-    const currentX = matrix.e;
-
-    _drag = {
-      panel,
-      startX:   touch.clientX,
-      startY:   touch.clientY,
-      baseY:    currentY,
-      currentX,
-      lastY:    currentY,
-      lastTime: Date.now(),
-      velocity: 0,
-    };
+  function _cleanupDrag() {
+    document.removeEventListener('touchmove', _passiveDragWatch, { passive: true });
+    document.removeEventListener('touchmove', _activeDragMove);
+    document.removeEventListener('touchend',  _dragEnd);
+    document.removeEventListener('touchcancel', _dragEnd);
+    paneStageEl?.classList.remove('is-dragging');
+    _drag = null;
   }
 
-  function onBannerDragMove(e) {
+  // Phase 1: passive observation — does NOT block scrolling
+  function _passiveDragWatch(e) {
+    if (!_drag) { _cleanupDrag(); return; }
+    const touch     = (e.touches || [e])[0];
+    const absDeltaY = Math.abs(touch.clientY - _drag.startY);
+    const absDeltaX = Math.abs(touch.clientX - _drag.startX);
+
+    if (absDeltaY < 8) return; // still ambiguous
+
+    if (absDeltaX > absDeltaY * 1.2) {
+      // Clearly horizontal — cancel drag intent entirely
+      _cleanupDrag();
+      return;
+    }
+
+    // Clearly vertical drag confirmed — upgrade to active drag
+    document.removeEventListener('touchmove', _passiveDragWatch, { passive: true });
+
+    // Now read the pane position and lock in the base
+    paneStageEl.classList.add('is-dragging');
+    const matrix = new DOMMatrix(getComputedStyle(paneStageEl).transform);
+    _drag.baseY    = matrix.f;
+    _drag.currentX = matrix.e;
+    _drag.lastY    = matrix.f;
+    _drag.lastTime = Date.now();
+
+    // Add non-passive active handler
+    document.addEventListener('touchmove', _activeDragMove, { passive: false });
+  }
+
+  // Phase 2: active drag — has control, can preventDefault
+  function _activeDragMove(e) {
     if (!_drag) return;
-    const touch    = (e.touches || [e])[0];
-    const absDeltaY = Math.abs((touch?.clientY || 0) - _drag.startY);
-    const absDeltaX = Math.abs((touch?.clientX || 0) - (_drag.startX || touch?.clientX || 0));
-    // Only hijack scroll after a clear vertical drag (> 6px vertical, not mostly horizontal)
-    if (absDeltaY < 6 || absDeltaX > absDeltaY * 1.5) return;
     e.preventDefault();
 
+    const touch    = (e.touches || [e])[0];
     const deltaY   = touch.clientY - _drag.startY;
     const rawY     = _drag.baseY + deltaY;
-
-    // Clamp between full and hidden snap positions
-    const minY = snapY('list-full');  // highest (most visible)
-    const maxY = snapY('hidden');     // lowest (peeking)
+    const minY     = snapY('list-full');
+    const maxY     = snapY('hidden');
     const clampedY = Math.max(minY, Math.min(maxY, rawY));
 
-    // Track velocity
     const now = Date.now();
     const dt  = now - _drag.lastTime || 1;
     _drag.velocity = (clampedY - _drag.lastY) / dt;
@@ -661,19 +666,18 @@
     paneStageEl.style.transform = `translate(${_drag.currentX}px, ${clampedY}px)`;
   }
 
-  function onBannerDragEnd(e) {
+  // Drag end — snap to nearest state
+  function _dragEnd() {
     if (!_drag) return;
+    const wasActive = paneStageEl.classList.contains('is-dragging');
+    const currentY  = _drag.lastY;
+    const velocity  = _drag.velocity;
+    const panel     = _drag.panel;
+    _cleanupDrag();
 
-    const currentY   = _drag.lastY;
-    const velocity   = _drag.velocity;
-    const panel      = _drag.panel;
+    if (!wasActive) return; // tap, not drag — nothing to snap
 
-    // Re-enable CSS transitions, clear inline transform override
-    paneStageEl.classList.remove('is-dragging');
     paneStageEl.style.transform = '';
-
-    _drag = null;
-
     // Project 180ms forward to honour flick momentum
     const projectedY = currentY + velocity * 180;
 
@@ -686,13 +690,41 @@
     applyMobileState(nearest);
   }
 
+  function onBannerDragStart(e, panel) {
+    if (!isMobileView() || !paneStageEl) return;
+    if (_drag) return;
+
+    // Don't intercept taps on interactive children (back button, links, pills)
+    const firstTouch = (e.touches || [e])[0];
+    const targetEl   = firstTouch
+      ? (document.elementFromPoint(firstTouch.clientX, firstTouch.clientY) || firstTouch.target)
+      : e.target;
+    if (targetEl?.closest('button, a')) return;
+
+    // Record touch start. Do NOT touch paneStageEl yet — wait for confirmation.
+    _drag = {
+      panel,
+      startX:   firstTouch.clientX,
+      startY:   firstTouch.clientY,
+      baseY:    0,
+      currentX: 0,
+      lastY:    0,
+      lastTime: Date.now(),
+      velocity: 0,
+    };
+
+    // Phase 1: passive listener — browser can scroll freely
+    document.addEventListener('touchmove', _passiveDragWatch, { passive: true });
+    document.addEventListener('touchend',    _dragEnd, { passive: false });
+    document.addEventListener('touchcancel', _dragEnd, { passive: false });
+  }
+
   function wireSheetBannerDrag(zoneId, panel, opts = {}) {
     const zone = document.getElementById(zoneId);
     if (!zone) return;
-    zone.addEventListener('touchstart',  (e) => onBannerDragStart(e, panel), { passive: true });
-    zone.addEventListener('touchmove',   onBannerDragMove,  { passive: false });
-    zone.addEventListener('touchend',    onBannerDragEnd,   { passive: false });
-    zone.addEventListener('touchcancel', onBannerDragEnd,   { passive: false });
+    // Only touchstart on the zone — move/end are handled at document level
+    // once a drag is confirmed. This means scroll containers are never blocked.
+    zone.addEventListener('touchstart', (e) => onBannerDragStart(e, panel), { passive: true });
 
     // Tap on the info tab when collapsed → restore to info-half
     if (panel === 'info' && opts.enableRestoreTap) {
@@ -914,6 +946,38 @@
       if (pointInRing(point, coords[i])) return false;
     }
     return true;
+  }
+
+  // Count how many loaded features overlap with a given feature.
+  // Uses bounding-box intersection (fast) plus a centroid point-in-polygon
+  // check to filter obvious false positives from the bbox over-count.
+  // This handles large irregular polygons like West Hawai'i RFMA correctly.
+  function countOverlapsForFeature(targetLayer) {
+    if (!targetLayer) return 0;
+    const targetBounds = targetLayer.getBounds();
+    const targetCenter = targetBounds.getCenter();
+    let count = 0;
+    Object.values(allIslandLayers).forEach((group) => {
+      group.eachLayer((layer) => {
+        if (layer === targetLayer) return;
+        if (!layer.getBounds) return;
+        const lb = layer.getBounds();
+        // Quick bbox check first
+        if (!targetBounds.intersects(lb)) return;
+        // Confirm with point-in-polygon in either direction:
+        // does target's center fall in this layer, OR does this layer's
+        // center fall in target? Catches both large-contains-small and
+        // small-inside-large cases.
+        const layerCenter = lb.getCenter();
+        if (
+          pointInFeatureGeometry(targetCenter, layer.feature) ||
+          pointInFeatureGeometry(layerCenter, targetLayer.feature)
+        ) {
+          count++;
+        }
+      });
+    });
+    return count;
   }
 
   function pointInFeatureGeometry(latlng, feature) {
@@ -1397,9 +1461,18 @@
       </div>`;
   }
 
-  function renderSingleAreaInfoPane(feature) {
+  function renderSingleAreaInfoPane(feature, overlapCount) {
+    const noticeHtml = overlapCount > 0 ? `
+      <div class="overlap-notice" role="status">
+        <span class="overlap-notice__text">
+          <strong>${overlapCount} other managed area${overlapCount === 1 ? '' : 's'} overlap${overlapCount === 1 ? 's' : ''} with this zone.</strong>
+          Tap the map to see combined rules at a specific spot.
+        </span>
+        <button class="overlap-notice__dismiss" type="button" aria-label="Dismiss">✕</button>
+      </div>` : '';
     return `
       <div class="mmpopup">
+        ${noticeHtml}
         <div class="mmpopup__scroll">
           ${buildAreaCard(feature, 'area-0')}
         </div>
@@ -1433,7 +1506,7 @@
         >
           <span class="mmpopup__summary-banner__cta">
             <span class="mmpopup__summary-trigger-pill">
-              <span class="mmpopup__summary-trigger-pill-text">See combined rules for all ${count} areas</span>
+              <span class="mmpopup__summary-trigger-pill-text">SEE COMBINED RULES FOR ${count} OVERLAPPING AREAS</span>
               <span class="mmpopup__summary-trigger-chevron" aria-hidden="true">▼</span>
             </span>
           </span>
@@ -1468,7 +1541,7 @@
       const count = btn.dataset.areaCount || '';
       pillText.textContent = expand
         ? 'Hide combined rules'
-        : `See combined rules for all ${count} areas`;
+        : `SEE COMBINED RULES FOR ${count} OVERLAPPING AREAS`;
     }
 
     const scroll = btn.closest('.mmpopup')?.querySelector('.mmpopup__scroll');
@@ -1516,6 +1589,71 @@
 
 
   // ── 15. INFO PANEL — OPEN / CLOSE ────────────────────────────
+  // ── ABOUT PANE ───────────────────────────────────────────────
+
+  const README_HTML = `
+    <div class="about-pane">
+      <div class="about-pane__hero">
+        <h2 class="about-pane__title">Hawaiʻi Managed Marine &amp; Freshwater Areas</h2>
+        <p class="about-pane__tagline">A public map for fishers, divers, and ocean users.</p>
+      </div>
+
+      <section class="about-pane__section">
+        <h3>Why this exists</h3>
+        <p>Hawaiʻi has over 90 managed marine and freshwater areas across all islands — Marine Life Conservation Districts, Fish Replenishment Areas, Community-Based Subsistence Fishing Areas, Wildlife Sanctuaries, Natural Area Reserves, harbors, and more. These areas frequently overlap, and their rules are scattered across dense legal documents that are hard to find and harder to read.</p>
+        <p>haMMA replaces that experience with something fast, clear, and built for real people in real places.</p>
+      </section>
+
+      <section class="about-pane__section">
+        <h3>How to use it</h3>
+        <p><strong>Tap or click the map</strong> at any location to see every managed area at that spot and the rules that apply — including overlapping areas combined into a single summary.</p>
+        <p><strong>Browse the list</strong> to find a specific area by island and name. When an area overlaps with others, a notification tells you how many and invites you to tap the map for the full combined view.</p>
+      </section>
+
+      <section class="about-pane__section">
+        <h3>How rules are shown</h3>
+        <p>Each area card has three tabs: <strong>About</strong>, <strong>Rules</strong>, and <strong>Laws</strong>. Rules are organized by category — Gear, Species &amp; Bag Limits, Activities, Seasons &amp; Times, and Transit &amp; Anchor — and color-coded by status: Prohibited, Allowed, Allowed with limits, and Notes.</p>
+        <p>When multiple areas overlap, source chips (colored numbered circles) appear at the end of each rule line to show which area each rule comes from. Tapping an area name in the summary legend flashes that polygon on the map.</p>
+      </section>
+
+      <section class="about-pane__section">
+        <h3>Data &amp; accuracy</h3>
+        <p>Rules are sourced from official Hawaii Administrative Rules (HAR) and Hawaii Revised Statutes (HRS) documents. This tool is for informational purposes only and may not reflect the most recent amendments. Always verify rules with the Division of Aquatic Resources before entering a managed area.</p>
+        <p>Links to official source documents are in the <strong>Laws</strong> tab of each area card.</p>
+      </section>
+
+      <section class="about-pane__section about-pane__section--links">
+        <a href="https://dlnr.hawaii.gov/dar/" target="_blank" rel="noopener" class="about-pane__link">Division of Aquatic Resources ↗</a>
+      </section>
+    </div>`;
+
+  function openAboutPane() {
+    // Close any active map selection cleanly
+    clearMapSelection({ keepInfoOpen: false });
+
+    // Update header titles
+    const desktopTitle = document.getElementById('info-banner-title');
+    const mobileTitle  = document.getElementById('info-banner-title-mobile');
+    if (desktopTitle) desktopTitle.textContent = 'About';
+    if (mobileTitle)  mobileTitle.textContent  = 'About';
+
+    // Render into info panel
+    infoContentEl.innerHTML = `
+      <div class="mmpopup">
+        <div class="mmpopup__scroll">${README_HTML}</div>
+      </div>`;
+
+    // Open the info panel on mobile / desktop
+    if (isMobileView()) {
+      applyMobileState('info-half');
+    } else {
+      setInfoSidebarState('visible');
+    }
+
+    // Clear list active state
+    clearAccordionSelectionHighlight();
+  }
+
   function openInfoPanel(latlng, features, options = {}) {
     activeLastLatlng  = latlng || null;
     lastSelectionSource = options.source || null;
@@ -1526,9 +1664,26 @@
     const isMulti   = features.length > 1;
     const areaName  = getFeatureName(features[0].properties) || 'Area Info';
     const count = features.length;
+    // For list-selected single areas, count how many other features overlap
+    // so we can show the notification banner.
+    let overlapCount = 0;
+    if (!isMulti && options.source === 'menu') {
+      // Find the Leaflet layer for this feature so we can use getBounds()
+      const areaName = getFeatureName(features[0].properties);
+      let targetLayer = null;
+      Object.values(allIslandLayers).some((group) => {
+        group.eachLayer((layer) => {
+          if (!targetLayer && getFeatureName(layer.feature?.properties) === areaName) {
+            targetLayer = layer;
+          }
+        });
+        return !!targetLayer;
+      });
+      if (targetLayer) overlapCount = countOverlapsForFeature(targetLayer);
+    }
     infoContentEl.innerHTML = isMulti
       ? renderOverlapInfoPane(features)
-      : renderSingleAreaInfoPane(features[0]);
+      : renderSingleAreaInfoPane(features[0], overlapCount);
 
     infoContentEl.querySelector('.mmpopup__scroll').scrollTop = 0;
 
@@ -2001,6 +2156,16 @@
       // Signal to screen readers that the list is ready
       islandListEl?.removeAttribute('aria-busy');
 
+      // Append "About this map" button at the bottom of the island list
+      if (islandListEl) {
+        const aboutBtn = document.createElement('button');
+        aboutBtn.type = 'button';
+        aboutBtn.className = 'about-map-btn';
+        aboutBtn.innerHTML = '<span class="about-map-btn__icon">ℹ</span><span class="about-map-btn__label">About this map</span>';
+        aboutBtn.addEventListener('click', openAboutPane);
+        islandListEl.appendChild(aboutBtn);
+      }
+
     } catch (err) {
       console.error('[haMMA] Failed to load service data:', err);
       islandListEl?.removeAttribute('aria-busy');
@@ -2058,6 +2223,13 @@
     const flashPill = e.target.closest('[data-flash-area]');
     if (flashPill) {
       flashFeatureByName(flashPill.dataset.flashArea);
+      return;
+    }
+
+    // Overlap notice dismiss button
+    const dismissBtn = e.target.closest('.overlap-notice__dismiss');
+    if (dismissBtn) {
+      dismissBtn.closest('.overlap-notice')?.remove();
       return;
     }
 
