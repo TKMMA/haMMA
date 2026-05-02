@@ -1647,7 +1647,7 @@
     if (isMobileView()) {
       applyMobileState('info-half');
     } else {
-      setInfoSidebarState('visible');
+      infoSidebarEl.classList.add('active');
     }
 
     // Clear list active state
