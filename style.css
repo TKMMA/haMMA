@@ -1286,9 +1286,11 @@ a {
   .overlap-notice__text  { font-size: 13px; }
   .summary-source-pill__name { font-size: 13px; }
 
-  /* Safe-area scroll padding */
-  .mmpopup__scroll {
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  /* Safe-area scroll padding — on mobile the actual scroll containers
+     are info-content and island-list, not mmpopup__scroll */
+  .info-sidebar .info-content,
+  .island-list {
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px) + var(--browser-offset, 0px));
   }
 
   /* ── Brand panel as drag surface (list side) ─────────── */
