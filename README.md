@@ -1,16 +1,22 @@
-# haMMA — Hawaiʻi Managed Marine & Freshwater Areas
+# haMMA — Hawaiʻi Marine & Freshwater Managed Areas (BETA) v.5.1.26
 
-An interactive public map that helps residents, visitors, fishers, divers, and ocean users understand which managed marine and freshwater areas apply at any location in Hawaiʻi — and what the rules are.
+An interactive public map that helps residents, visitors, fishers, divers, and ocean users understand which managed marine and freshwater area rules apply at any location in Hawaiʻi.
+
+All Statewide fishing regulations still apply on top of each area's specific rules
 
 ---
 
 ## Why this exists
 
-Hawaiʻi has over 90 managed marine and freshwater areas across all islands — Marine Life Conservation Districts, Fish Replenishment Areas, Community-Based Subsistence Fishing Areas, Wildlife Sanctuaries, Natural Area Reserves, harbors, freshwater fishing areas, and more. These areas frequently overlap, and their rules are scattered across dense legal documents that are hard to find and harder to read.
+Since the 1960s, the Hawaiʻi Division of Aquatic Resources (DAR) has established place-specific regulations for a total of 90 different marine and freshwater areas across the state — Marine Life Conservation Districts, Fish Replenishment Areas, Community-Based Subsistence Fishing Areas, Public Fishing Areas (freshwater), and more. These areas frequently overlap, and their rules are scattered across dense legal documents that are hard to find and harder to read.
 
-Someone standing on a reef near Miloli'i might be simultaneously inside the West Hawaiʻi Regional Fishery Management Area, the Miloli'i CBSFA, and one of its sub-zones — each with different rules for gear, species, seasons, and activities. The existing government map tools are difficult to use in the field, especially on a phone.
+Someone on a boat near Miloliʻi (South Kona, Hawaiʻi Island) might be simultaneously inside the West Hawaiʻi Regional Fishery Management Area, the Miloliʻi CBSFA, the Miloliʻi FRA, and one or more of its multiple sub-zones — each with different rules for gear, species, bag limits, seasons, and activities. The existing government map tools are difficult to use in the field, especially on a phone.
 
 haMMA replaces that experience with something fast, clear, and built for real people in real places.
+
+This map was build by Tyler Kueffner for DAR and for Hawaiʻi's fishers.
+
+For suggested features, data corrections, questions, or bugs in this map, email: tk85@hawaii.edu
 
 ---
 
