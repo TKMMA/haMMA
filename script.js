@@ -1594,32 +1594,42 @@
   const README_HTML = `
     <div class="about-pane">
       <div class="about-pane__hero">
-        <h2 class="about-pane__title">Hawaiʻi Managed Marine &amp; Freshwater Areas</h2>
-        <p class="about-pane__tagline">A public map for fishers, divers, and ocean users.</p>
+        <h2 class="about-pane__title">haMMA — Hawaiʿi Managed Marine &amp; Freshwater Areas</h2>
+        <p class="about-pane__tagline">A public map for fishers, divers, and ocean users in Hawaiʿi.</p>
       </div>
 
       <section class="about-pane__section">
+        <p><em>All statewide fishing regulations still apply on top of each area’s specific rules.</em></p>
+      </section>
+
+      <section class="about-pane__section">
         <h3>Why this exists</h3>
-        <p>Hawaiʻi has over 90 managed marine and freshwater areas across all islands — Marine Life Conservation Districts, Fish Replenishment Areas, Community-Based Subsistence Fishing Areas, Wildlife Sanctuaries, Natural Area Reserves, harbors, and more. These areas frequently overlap, and their rules are scattered across dense legal documents that are hard to find and harder to read.</p>
-        <p>haMMA replaces that experience with something fast, clear, and built for real people in real places.</p>
+        <p>Since the 1960s, the Hawaiʿi Division of Aquatic Resources (DAR) has established place-specific regulations for 90 different marine and freshwater areas across the state. These areas frequently overlap, and their rules are scattered across dense legal documents that are hard to find and harder to read.</p>
+        <p>Someone on a boat near Miloliʻi might be simultaneously inside the West Hawaiʿi Regional Fishery Management Area, the Miloliʻi CBSFA, the Miloliʻi FRA, and one or more sub-zones — each with different rules. haMMA makes that clear at a glance.</p>
       </section>
 
       <section class="about-pane__section">
         <h3>How to use it</h3>
         <p><strong>Tap or click the map</strong> at any location to see every managed area at that spot and the rules that apply — including overlapping areas combined into a single summary.</p>
-        <p><strong>Browse the list</strong> to find a specific area by island and name. When an area overlaps with others, a notification tells you how many and invites you to tap the map for the full combined view.</p>
+        <p><strong>Browse the list</strong> to find a specific area by island and name. When an area selected from the list overlaps with others, a notification tells you how many other areas share that zone.</p>
       </section>
 
       <section class="about-pane__section">
         <h3>How rules are shown</h3>
         <p>Each area card has three tabs: <strong>About</strong>, <strong>Rules</strong>, and <strong>Laws</strong>. Rules are organized by category — Gear, Species &amp; Bag Limits, Activities, Seasons &amp; Times, and Transit &amp; Anchor — and color-coded by status: Prohibited, Allowed, Allowed with limits, and Notes.</p>
-        <p>When multiple areas overlap, source chips (colored numbered circles) appear at the end of each rule line to show which area each rule comes from. Tapping an area name in the summary legend flashes that polygon on the map.</p>
+        <p>When multiple areas overlap, a combined summary reorganizes all rules into one unified view. Source chips show which area each rule comes from. Tapping an area name flashes that polygon on the map.</p>
       </section>
 
       <section class="about-pane__section">
         <h3>Data &amp; accuracy</h3>
-        <p>Rules are sourced from official Hawaii Administrative Rules (HAR) and Hawaii Revised Statutes (HRS) documents. This tool is for informational purposes only and may not reflect the most recent amendments. Always verify rules with the Division of Aquatic Resources before entering a managed area.</p>
+        <p>Rules are sourced from official Hawaii Administrative Rules (HAR) and Hawaii Revised Statutes (HRS) documents. This tool is for informational purposes only and may not reflect the most recent amendments. Always verify rules with DAR before entering a managed area.</p>
         <p>Links to official source documents are in the <strong>Laws</strong> tab of each area card.</p>
+      </section>
+
+      <section class="about-pane__section">
+        <h3>Contact</h3>
+        <p>Built by Tyler Kueffner for DAR and for Hawaiʿi’s fishers.</p>
+        <p>For suggested features, data corrections, questions, or bugs: <a href="mailto:tk85@hawaii.edu" class="about-pane__link">tk85@hawaii.edu</a></p>
       </section>
 
       <section class="about-pane__section about-pane__section--links">
