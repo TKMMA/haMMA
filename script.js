@@ -1,5 +1,8 @@
 /* ============================================================
    haMMA — Hawaii Managed Marine Areas
+   Copyright (c) 2026 Tyler Kueffner
+   All rights reserved. Copying, modification, or distribution of this software is prohibited without the copyright holder's consent.
+   
    script.js  |  Full refactor
 
    Sections
